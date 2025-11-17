@@ -1,0 +1,806 @@
+{
+  "agenzia": {
+    "alfa": 85,
+    "beta": 10,
+    "gamma": 20,
+    "delta": 15
+  },
+  "percezione": {
+    "alfa": -70,
+    "beta": -10,
+    "gamma": -20,
+    "delta": -5
+  },
+  "iterazione": {
+    "alfa": 40,
+    "beta": 30,
+    "gamma": 10,
+    "delta": 25
+  },
+  "coerenza": {
+    "alfa": -20,
+    "beta": -40,
+    "gamma": 30,
+    "delta": -60
+  },
+  "distorsione": {
+    "alfa": 10,
+    "beta": 15,
+    "gamma": -50,
+    "delta": 80
+  },
+  "attrito": {
+    "alfa": 30,
+    "beta": 5,
+    "gamma": -40,
+    "delta": 65
+  },
+  "linea_evolutiva": {
+    "alfa": -10,
+    "beta": -70,
+    "gamma": 50,
+    "delta": -20
+  },
+  "deriva": {
+    "alfa": -30,
+    "beta": 40,
+    "gamma": -30,
+    "delta": 70
+  },
+  "integrazione": {
+    "alfa": 20,
+    "beta": -10,
+    "gamma": 60,
+    "delta": -10
+  },
+  "rottura": {
+    "alfa": 75,
+    "beta": 35,
+    "gamma": -60,
+    "delta": 85
+  },
+  "segnale": {
+    "alfa": 10,
+    "beta": -20,
+    "gamma": 0,
+    "delta": -15
+  },
+  "retroazione": {
+    "alfa": 50,
+    "beta": 10,
+    "gamma": -10,
+    "delta": 20
+  },
+  "gradiente": {
+    "alfa": -25,
+    "beta": 30,
+    "gamma": 15,
+    "delta": 10
+  },
+  "soglia": {
+    "alfa": 15,
+    "beta": -5,
+    "gamma": 20,
+    "delta": 40
+  },
+  "risonanza": {
+    "alfa": 5,
+    "beta": -30,
+    "gamma": -20,
+    "delta": 50
+  },
+  "diffusione": {
+    "alfa": -40,
+    "beta": 60,
+    "gamma": -30,
+    "delta": 30
+  },
+  "vincolo": {
+    "alfa": -30,
+    "beta": 20,
+    "gamma": 40,
+    "delta": -80
+  },
+  "astrazione": {
+    "alfa": -20,
+    "beta": 80,
+    "gamma": 30,
+    "delta": -10
+  },
+  "morfologia": {
+    "alfa": 30,
+    "beta": -10,
+    "gamma": 50,
+    "delta": 5
+  },
+  "turbolenza": {
+    "alfa": 10,
+    "beta": 25,
+    "gamma": -70,
+    "delta": 95
+  },
+  "allineamento": {
+    "alfa": 15,
+    "beta": -40,
+    "gamma": 40,
+    "delta": -50
+  },
+  "novità": {
+    "alfa": 60,
+    "beta": 50,
+    "gamma": -50,
+    "delta": 70
+  },
+  "memoria": {
+    "alfa": -50,
+    "beta": -60,
+    "gamma": 70,
+    "delta": -30
+  },
+  "collettività": {
+    "alfa": -10,
+    "beta": 40,
+    "gamma": -60,
+    "delta": 20
+  },
+  "modulazione": {
+    "alfa": 20,
+    "beta": 10,
+    "gamma": -10,
+    "delta": 30
+  },
+  "traduzione": {
+    "alfa": 40,
+    "beta": 30,
+    "gamma": 10,
+    "delta": 10
+  },
+  "configurazione": {
+    "alfa": -5,
+    "beta": -30,
+    "gamma": 50,
+    "delta": -70
+  },
+  "sincronia": {
+    "alfa": -20,
+    "beta": -50,
+    "gamma": 40,
+    "delta": -40
+  },
+  "distribuzione_agenziale": {
+    "alfa": 35,
+    "beta": 45,
+    "gamma": -40,
+    "delta": 30
+  },
+  "intreccio": {
+    "alfa": -10,
+    "beta": 50,
+    "gamma": -80,
+    "delta": 40
+  },
+  "stabilità": {
+    "alfa": -40,
+    "beta": -30,
+    "gamma": 30,
+    "delta": -90
+  },
+  "ambiguità": {
+    "alfa": -10,
+    "beta": 30,
+    "gamma": 10,
+    "delta": 60
+  },
+  "perturbazione": {
+    "alfa": 70,
+    "beta": 20,
+    "gamma": -40,
+    "delta": 85
+  },
+  "assemblaggio": {
+    "alfa": 30,
+    "beta": -20,
+    "gamma": 60,
+    "delta": 10
+  },
+  "attenzione": {
+    "alfa": -25,
+    "beta": 35,
+    "gamma": 10,
+    "delta": 15
+  },
+  "focalizzazione": {
+    "alfa": 30,
+    "beta": 60,
+    "gamma": 20,
+    "delta": 5
+  },
+  "distribuzione": {
+    "alfa": 10,
+    "beta": 55,
+    "gamma": -30,
+    "delta": 35
+  },
+  "convergenza": {
+    "alfa": 40,
+    "beta": 45,
+    "gamma": 50,
+    "delta": -10
+  },
+  "divergenza": {
+    "alfa": 35,
+    "beta": 50,
+    "gamma": -45,
+    "delta": 40
+  },
+  "feedback_negativo": {
+    "alfa": 55,
+    "beta": 15,
+    "gamma": -5,
+    "delta": -30
+  },
+  "feedback_positivo": {
+    "alfa": 65,
+    "beta": 20,
+    "gamma": -15,
+    "delta": 50
+  },
+  "oscillazione": {
+    "alfa": 5,
+    "beta": 10,
+    "gamma": -25,
+    "delta": 83
+  },
+  "rituale": {
+    "alfa": -5,
+    "beta": -20,
+    "gamma": 40,
+    "delta": -75
+  },
+  "improvvisazione": {
+    "alfa": 60,
+    "beta": 25,
+    "gamma": -40,
+    "delta": 90
+  },
+  "ridondanza": {
+    "alfa": -10,
+    "beta": -15,
+    "gamma": -60,
+    "delta": -20
+  },
+  "scarsità": {
+    "alfa": 15,
+    "beta": 5,
+    "gamma": 30,
+    "delta": 20
+  },
+  "abbondanza": {
+    "alfa": 20,
+    "beta": -25,
+    "gamma": -50,
+    "delta": 35
+  },
+  "mediazione": {
+    "alfa": 25,
+    "beta": 40,
+    "gamma": 30,
+    "delta": 5
+  },
+  "negoziazione": {
+    "alfa": 45,
+    "beta": 35,
+    "gamma": -20,
+    "delta": 25
+  },
+  "cooperazione": {
+    "alfa": 50,
+    "beta": 15,
+    "gamma": -35,
+    "delta": 10
+  },
+  "competizione": {
+    "alfa": 70,
+    "beta": 10,
+    "gamma": -25,
+    "delta": 55
+  },
+  "simmetria": {
+    "alfa": -20,
+    "beta": -40,
+    "gamma": 45,
+    "delta": -85
+  },
+  "asimmetria": {
+    "alfa": 25,
+    "beta": 5,
+    "gamma": -35,
+    "delta": 65
+  },
+  "gerarchia": {
+    "alfa": 40,
+    "beta": -30,
+    "gamma": 55,
+    "delta": -40
+  },
+  "rete": {
+    "alfa": 10,
+    "beta": 75,
+    "gamma": -70,
+    "delta": 35
+  },
+  "nodalità": {
+    "alfa": 5,
+    "beta": 40,
+    "gamma": 20,
+    "delta": 10
+  },
+  "percorso": {
+    "alfa": 35,
+    "beta": 20,
+    "gamma": 25,
+    "delta": -15
+  },
+  "traccia": {
+    "alfa": -15,
+    "beta": 5,
+    "gamma": 15,
+    "delta": -10
+  },
+  "impronta": {
+    "alfa": -20,
+    "beta": 0,
+    "gamma": 35,
+    "delta": -25
+  },
+  "memoria_collettiva": {
+    "alfa": -45,
+    "beta": -55,
+    "gamma": 80,
+    "delta": -35
+  },
+  "habitat": {
+    "alfa": -30,
+    "beta": -50,
+    "gamma": 40,
+    "delta": -45
+  },
+  "ecosistema": {
+    "alfa": 5,
+    "beta": -80,
+    "gamma": -75,
+    "delta": 30
+  },
+  "interdipendenza": {
+    "alfa": 15,
+    "beta": -60,
+    "gamma": -65,
+    "delta": 25
+  },
+  "adattamento": {
+    "alfa": 40,
+    "beta": 10,
+    "gamma": 45,
+    "delta": 20
+  },
+  "auto_organizzazione": {
+    "alfa": 55,
+    "beta": -35,
+    "gamma": -55,
+    "delta": 70
+  },
+  "metabolismo": {
+    "alfa": 35,
+    "beta": -20,
+    "gamma": 30,
+    "delta": 15
+  },
+  "materialità": {
+    "alfa": 20,
+    "beta": 15,
+    "gamma": 60,
+    "delta": -5
+  },
+  "densità": {
+    "alfa": 5,
+    "beta": -25,
+    "gamma": 55,
+    "delta": -15
+  },
+  "scala": {
+    "alfa": -5,
+    "beta": -70,
+    "gamma": 25,
+    "delta": -20
+  },
+  "ritmo": {
+    "alfa": 10,
+    "beta": -15,
+    "gamma": 35,
+    "delta": 45
+  },
+  "motivo_ricorrente": {
+    "alfa": -10,
+    "beta": -35,
+    "gamma": 65,
+    "delta": -60
+  },
+  "variazione": {
+    "alfa": 35,
+    "beta": 30,
+    "gamma": -20,
+    "delta": 60
+  },
+  "continuità": {
+    "alfa": -35,
+    "beta": -25,
+    "gamma": 40,
+    "delta": -83
+  },
+  "discontinuità": {
+    "alfa": 45,
+    "beta": 15,
+    "gamma": -45,
+    "delta": 75
+  },
+  "canale": {
+    "alfa": 15,
+    "beta": -10,
+    "gamma": 10,
+    "delta": -25
+  },
+  "rumore": {
+    "alfa": 5,
+    "beta": 25,
+    "gamma": -35,
+    "delta": 80
+  },
+  "filtro": {
+    "alfa": 30,
+    "beta": 5,
+    "gamma": 20,
+    "delta": -30
+  },
+  "interfaccia": {
+    "alfa": 40,
+    "beta": 20,
+    "gamma": -10,
+    "delta": 35
+  },
+  "protocollo": {
+    "alfa": 50,
+    "beta": -15,
+    "gamma": 30,
+    "delta": -50
+  },
+  "standard": {
+    "alfa": -25,
+    "beta": -20,
+    "gamma": 40,
+    "delta": -70
+  },
+  "deviazione": {
+    "alfa": 55,
+    "beta": 15,
+    "gamma": -40,
+    "delta": 83
+  },
+  "campo": {
+    "alfa": -15,
+    "beta": -65,
+    "gamma": -10,
+    "delta": 10
+  },
+  "contesto": {
+    "alfa": -20,
+    "beta": -85,
+    "gamma": 25,
+    "delta": 0
+  },
+  "cornice": {
+    "alfa": -10,
+    "beta": -60,
+    "gamma": 35,
+    "delta": -45
+  },
+  "scenario": {
+    "alfa": 5,
+    "beta": -75,
+    "gamma": -25,
+    "delta": 30
+  },
+  "prototipo": {
+    "alfa": 65,
+    "beta": 35,
+    "gamma": 60,
+    "delta": 20
+  },
+  "iterazione_rapida": {
+    "alfa": 80,
+    "beta": 25,
+    "gamma": -10,
+    "delta": 55
+  },
+  "ottimizzazione": {
+    "alfa": 70,
+    "beta": 40,
+    "gamma": 30,
+    "delta": -20
+  },
+  "riduzione": {
+    "alfa": 45,
+    "beta": 30,
+    "gamma": 40,
+    "delta": -35
+  },
+  "amplificazione": {
+    "alfa": 55,
+    "beta": 20,
+    "gamma": -30,
+    "delta": 65
+  },
+  "selezione": {
+    "alfa": 60,
+    "beta": 45,
+    "gamma": 50,
+    "delta": -10
+  },
+  "mutazione": {
+    "alfa": 75,
+    "beta": 30,
+    "gamma": -55,
+    "delta": 90
+  },
+  "ibridazione": {
+    "alfa": 50,
+    "beta": 10,
+    "gamma": -80,
+    "delta": 70
+  },
+  "transizione": {
+    "alfa": 35,
+    "beta": 5,
+    "gamma": -15,
+    "delta": 55
+  },
+  "soggettivazione": {
+    "alfa": 25,
+    "beta": 15,
+    "gamma": 60,
+    "delta": 30
+  },
+  "oggettivazione": {
+    "alfa": -15,
+    "beta": -10,
+    "gamma": 70,
+    "delta": -40
+  },
+  "attenuazione": {
+    "alfa": -5,
+    "beta": 10,
+    "gamma": 20,
+    "delta": -55
+  },
+  "rafforzamento": {
+    "alfa": 45,
+    "beta": 20,
+    "gamma": 25,
+    "delta": 35
+  },
+  "innesco": {
+    "alfa": 83,
+    "beta": 35,
+    "gamma": -20,
+    "delta": 75
+  },
+  "cascata": {
+    "alfa": 70,
+    "beta": 25,
+    "gamma": -35,
+    "delta": 83
+  },
+  "diffrazione": {
+    "alfa": 20,
+    "beta": 15,
+    "gamma": -45,
+    "delta": 65
+  },
+  "rifrazione": {
+    "alfa": 15,
+    "beta": 10,
+    "gamma": -30,
+    "delta": 50
+  },
+  "riuso": {
+    "alfa": 35,
+    "beta": -5,
+    "gamma": 45,
+    "delta": -10
+  },
+  "manutenzione": {
+    "alfa": 40,
+    "beta": -15,
+    "gamma": 55,
+    "delta": -65
+  },
+  "cura": {
+    "alfa": -20,
+    "beta": -25,
+    "gamma": 60,
+    "delta": -40
+  },
+  "conflitto": {
+    "alfa": 65,
+    "beta": 20,
+    "gamma": -25,
+    "delta": 60
+  },
+  "allineamento_locale": {
+    "alfa": 25,
+    "beta": 10,
+    "gamma": 35,
+    "delta": -30
+  },
+  "allineamento_globale": {
+    "alfa": 20,
+    "beta": -55,
+    "gamma": 45,
+    "delta": -25
+  },
+  "copresenza": {
+    "alfa": 5,
+    "beta": -15,
+    "gamma": -20,
+    "delta": 40
+  },
+  "delegazione": {
+    "alfa": 50,
+    "beta": 30,
+    "gamma": -10,
+    "delta": 15
+  },
+  "orchestrazione": {
+    "alfa": 60,
+    "beta": -20,
+    "gamma": 30,
+    "delta": -15
+  },
+  "prioritizzazione": {
+    "alfa": 55,
+    "beta": 45,
+    "gamma": 35,
+    "delta": -5
+  },
+  "buffer": {
+    "alfa": -5,
+    "beta": 5,
+    "gamma": 25,
+    "delta": -20
+  },
+  "canalizzazione": {
+    "alfa": 45,
+    "beta": 35,
+    "gamma": -25,
+    "delta": 30
+  },
+  "polarizzazione": {
+    "alfa": 40,
+    "beta": 15,
+    "gamma": -60,
+    "delta": 75
+  },
+  "frammentazione": {
+    "alfa": 35,
+    "beta": 25,
+    "gamma": -70,
+    "delta": 80
+  },
+  "consolidamento": {
+    "alfa": -25,
+    "beta": -30,
+    "gamma": 65,
+    "delta": -55
+  },
+  "stratificazione": {
+    "alfa": 10,
+    "beta": -35,
+    "gamma": -50,
+    "delta": -10
+  },
+  "propagazione": {
+    "alfa": 55,
+    "beta": 50,
+    "gamma": -40,
+    "delta": 70
+  },
+  "ancoraggio": {
+    "alfa": -35,
+    "beta": -20,
+    "gamma": 50,
+    "delta": -75
+  },
+  "disancoraggio": {
+    "alfa": 45,
+    "beta": 10,
+    "gamma": -45,
+    "delta": 60
+  },
+  "vincolo_morbido": {
+    "alfa": -15,
+    "beta": 20,
+    "gamma": 35,
+    "delta": -35
+  },
+  "vincolo_rigido": {
+    "alfa": -30,
+    "beta": 15,
+    "gamma": 55,
+    "delta": -80
+  },
+  "saturazione": {
+    "alfa": 30,
+    "beta": -10,
+    "gamma": -55,
+    "delta": 50
+  },
+  "svuotamento": {
+    "alfa": -10,
+    "beta": 10,
+    "gamma": -35,
+    "delta": 15
+  },
+  "eccedenza": {
+    "alfa": 25,
+    "beta": -5,
+    "gamma": -45,
+    "delta": 40
+  },
+  "latenza": {
+    "alfa": -40,
+    "beta": 5,
+    "gamma": -20,
+    "delta": 35
+  },
+  "precarietà": {
+    "alfa": 15,
+    "beta": 30,
+    "gamma": -15,
+    "delta": 83
+  },
+  "ridondanza_strutturale": {
+    "alfa": -20,
+    "beta": -25,
+    "gamma": 75,
+    "delta": -50
+  },
+  "ridondanza_informativa": {
+    "alfa": -5,
+    "beta": 15,
+    "gamma": -65,
+    "delta": -15
+  },
+  "loop": {
+    "alfa": 35,
+    "beta": 20,
+    "gamma": -10,
+    "delta": 55
+  },
+  "soglia_di_rumore": {
+    "alfa": 10,
+    "beta": 35,
+    "gamma": -25,
+    "delta": 70
+  },
+  "campo_di_forza": {
+    "alfa": 20,
+    "beta": -65,
+    "gamma": -35,
+    "delta": 25
+  },
+  "multiscalarità": {
+    "alfa": 5,
+    "beta": -90,
+    "gamma": -45,
+    "delta": 10
+  }
+}
