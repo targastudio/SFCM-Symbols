@@ -57,6 +57,21 @@ The debug overlay renders:
    - Alfa and Beta values from the first keyword are captured (exposed in debug info)
    - These represent the original semantic axes that generated the anchor point
 
+7. **Direction Clustering & Profile Visualization (patch03 + patch04)**:
+   - **Cluster centers (before Gamma rotation)**: Dashed magenta lines showing the original cluster center angles (distributed evenly across 0-180°).
+   - **Final cluster centers (after Gamma rotation)**: Solid magenta lines showing cluster centers after Gamma rotation is applied.
+   - **Direction indicators**: Small colored lines showing the final direction of each line (one per line generated).
+     - Each cluster has a different color (hue based on cluster index).
+     - Lines radiate from the anchor point in the direction of each line.
+     - Con **patch04** lo spessore di ogni direzione è proporzionale al profilo di lunghezza per-linea (`lengthProfile`) e l'opacità è proporzionale al profilo di curvatura (`curvatureProfile`), rendendo più evidenti le linee più lunghe/più curve.
+   - **Gamma rotation info**: Text display showing:
+     - Gamma value (from axes)
+     - Rotation angle applied (gamma / 100 * 180)
+     - Number of clusters used
+     - Cluster spread angle used
+   - **Purpose**: Visualize how clustering groups lines into directional clusters and how Gamma rotates all clusters together
+   - **Fine-tuning**: Use this visualization to adjust `clusterCount` and `clusterSpread` sliders for desired visual effect
+
 ---
 
 ## Usage
@@ -90,8 +105,11 @@ The debug overlay is controlled by the **"Debug mode"** checkbox in the UI (loca
      - Alfa and Beta values from first keyword
      - **Bounding box** of pre-mirroring geometry (via `computeMirroringDebugInfo`)
      - **Mirroring axis type** and **axis segment** for visualization
+     - **Direction clustering debug** (patch03): Array of `DirectionClusterDebug` for each line generated
+     - **Clustering parameters**: `clusterCount`, `clusterSpread`, and `gamma` values used
    - All mirroring debug info is captured **BEFORE** `applyFinalMirroring` is called
    - Per-keyword anchors are mapped from `basePoints` with their index and keyword string
+   - Direction clustering debug is captured during curve generation (via `getLineDirectionWithDebug`)
    - Returns optional `debug` field in `EngineV2Result`
 
 2. **State Management** (`app/page.tsx`):
@@ -103,11 +121,16 @@ The debug overlay is controlled by the **"Debug mode"** checkbox in the UI (loca
 3. **Rendering** (`components/SvgPreview.tsx`):
    - Conditionally renders `<DebugOverlay />` when `debugMode === true`
    - Debug overlay is rendered AFTER all connections (on top)
+   - Passes clustering debug props (`directionClusters`, `clusterCount`, `clusterSpread`, `gamma`) to `DebugOverlay`
 
 4. **Visualization** (`components/DebugOverlay.tsx`):
    - Pure React component with no side effects
-   - Renders quadrant lines and anchor visualization
+   - Renders quadrant lines, anchor visualization, and direction clustering visualization
    - Uses `pointerEvents="none"` to avoid interfering with interactions
+   - Clustering visualization includes:
+     - Cluster center indicators (before and after Gamma rotation)
+     - Direction lines for each generated line (color-coded by cluster)
+     - Text labels showing Gamma value and clustering parameters
 
 ### Coordinate System
 
@@ -139,6 +162,24 @@ The debug overlay helps visualize:
    - Offsets between these elements show how geometry distribution affects mirroring behavior
    - The per-keyword anchors show how multiple keywords spread across the canvas space
 
+4. **Direction Clustering (patch03)**:
+   - **Cluster centers (dashed magenta)**: Show where clusters are positioned before Gamma rotation
+   - **Final cluster centers (solid magenta)**: Show where clusters are positioned after Gamma rotation
+   - **Direction lines (colored)**: Each line's final direction, color-coded by cluster
+   - **Interpretation**:
+     - Lines of the same color belong to the same cluster
+     - Distance between direction lines and cluster center shows in-cluster jitter
+     - Rotation between dashed and solid magenta lines shows Gamma rotation effect
+     - Use slider adjustments to see how clusterCount and clusterSpread affect the pattern
+   - **Fine-tuning workflow**:
+     1. Enable debug mode
+     2. Generate symbol with test keywords
+     3. Observe cluster distribution and line directions
+     4. Adjust "Numero Cluster" slider to change number of directional groups
+     5. Adjust "Ampiezza Cluster" slider to change spread within clusters
+     6. Regenerate to see changes
+     7. Iterate until desired visual effect is achieved
+
 ---
 
 ## Removing Debug Code
@@ -154,12 +195,17 @@ All debug functionality is isolated and easy to remove:
 
 1. **`lib/types.ts`**:
    - Remove `KeywordAnchorDebug` type definition
-   - Remove `EngineV2DebugInfo` type definition (including bbox, mirrorAxisType, mirrorAxisSegment, anchors fields)
+   - Remove `DirectionClusterDebug` type definition (patch03)
+   - Remove `EngineV2DebugInfo` type definition (including bbox, mirrorAxisType, mirrorAxisSegment, anchors, directionClusters, clusterCount, clusterSpread, gamma fields)
 
 2. **`lib/engine_v2/finalMirroring.ts`**:
    - Remove `computeMirroringDebugInfo` function (used only for debug visualization)
 
-3. **`lib/engine_v2/engine.ts`**:
+3. **`lib/engine_v2/curves.ts`**:
+   - Remove `getLineDirectionWithDebug` function (used only for debug visualization)
+   - Revert `generateCurveFromPoint` to return array directly (remove directionClusters from return)
+
+4. **`lib/engine_v2/engine.ts`**:
    - Remove `EngineV2DebugInfo` import
    - Remove `computeMirroringDebugInfo` import from `finalMirroring`
    - Remove `EngineV2Result` type (or simplify to just return `BranchedConnection[]`)
@@ -173,10 +219,12 @@ All debug functionality is isolated and easy to remove:
    - Remove `debugInfo` and `debugMode` props
    - Remove debug overlay rendering (including bbox, mirrorAxisSegment, and anchors props)
 
-4. **`components/DebugOverlay.tsx`**:
+6. **`components/DebugOverlay.tsx`**:
+   - Remove direction clustering visualization code (patch03)
+   - Remove clustering-related props (directionClusters, clusterCount, clusterSpread, gamma)
    - This entire file can be deleted (if removing all debug functionality)
 
-5. **`app/page.tsx`**:
+7. **`app/page.tsx`**:
    - Remove `debugMode` state
    - Remove "Debug mode" checkbox from UI
    - Remove `EngineV2DebugInfo` import

@@ -25,6 +25,10 @@ export default function Home() {
   const [lineLengthSlider, setLineLengthSlider] = useState(50);
   // Slider2: "Curvatura linee" - controls curvatureScale in ENGINE_V2 (0-100, default 50)
   const [curvatureSlider, setCurvatureSlider] = useState(50);
+  // Slider3: "Numero Cluster" - controls clusterCount in ENGINE_V2 (0-100, default 33 → clusterCount = 3)
+  const [clusterCountSlider, setClusterCountSlider] = useState(33);
+  // Slider4: "Ampiezza Cluster" - controls clusterSpread in ENGINE_V2 (0-100, default 40 → clusterSpread = 30)
+  const [clusterSpreadSlider, setClusterSpreadSlider] = useState(40);
   // Placeholder sliders (ENGINE_V2 placeholders - no effect on generation yet)
   // NOTE: These sliders are kept in the UI for future mapping according to ENGINE_V2_SLIDER_MAPPING.md.
   const [complessita, setComplessita] = useState(0.5);
@@ -202,6 +206,20 @@ export default function Home() {
       // s = 100 → curvatureScale = 1.7   (curve molto marcate)
       const curvatureScale = 0.3 + (curvatureSlider / 100) * (1.7 - 0.3);
 
+      // Map Slider3 "Numero Cluster" (0-100) to clusterCount (2-5)
+      // Formula: clusterCount = Math.round(2 + (slider / 100) * 3)
+      // s = 0   → clusterCount = 2
+      // s = 33  → clusterCount = 3 (default)
+      // s = 100 → clusterCount = 5
+      const clusterCount = Math.round(2 + (clusterCountSlider / 100) * 3);
+
+      // Map Slider4 "Ampiezza Cluster" (0-100) to clusterSpread (10-60)
+      // Formula: clusterSpread = 10 + (slider / 100) * 50
+      // s = 0   → clusterSpread = 10  (cluster stretti)
+      // s = 40  → clusterSpread = 30  (default)
+      // s = 100 → clusterSpread = 60  (cluster ampi)
+      const clusterSpread = 10 + (clusterSpreadSlider / 100) * 50;
+
       // ENGINE_V2: Generate connections using the new 4-axis engine
       // includeDebug: only capture debug info when debugMode is enabled
       const result = await generateEngineV2(
@@ -210,7 +228,7 @@ export default function Home() {
         canvasWidth,
         canvasHeight,
         debugMode,
-        { lengthScale, curvatureScale }
+        { lengthScale, curvatureScale, clusterCount, clusterSpread }
       );
 
       // CRITICAL: Reset animation state BEFORE setting new connections
@@ -348,6 +366,40 @@ export default function Home() {
                 step="1"
                 value={curvatureSlider}
                 onChange={(e) => setCurvatureSlider(parseInt(e.target.value, 10))}
+                style={{ width: "100%" }}
+              />
+            </div>
+
+            {/* Slider3: Numero Cluster - controls clusterCount in ENGINE_V2 (patch03) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <label htmlFor="clusterCount" style={{ fontSize: "1rem" }}>
+                Numero Cluster: {Math.round(2 + (clusterCountSlider / 100) * 3)}
+              </label>
+              <input
+                id="clusterCount"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={clusterCountSlider}
+                onChange={(e) => setClusterCountSlider(parseInt(e.target.value, 10))}
+                style={{ width: "100%" }}
+              />
+            </div>
+
+            {/* Slider4: Ampiezza Cluster - controls clusterSpread in ENGINE_V2 (patch03) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <label htmlFor="clusterSpread" style={{ fontSize: "1rem" }}>
+                Ampiezza Cluster: {Math.round(10 + (clusterSpreadSlider / 100) * 50)}°
+              </label>
+              <input
+                id="clusterSpread"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={clusterSpreadSlider}
+                onChange={(e) => setClusterSpreadSlider(parseInt(e.target.value, 10))}
                 style={{ width: "100%" }}
               />
             </div>

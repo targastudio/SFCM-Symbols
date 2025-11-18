@@ -34,19 +34,31 @@ Questa coppia definisce il **punto di ancoraggio base** del sistema di linee.
 
 ## 3. Dispersione punti origine (patch02)
 
-Prima di generare le linee, ogni punto di origine viene disperso deterministicamente attorno al punto di ancoraggio base:
+Prima di generare le linee, i punti di origine sono gestiti come segue:
 
-- **Raggio di dispersione**: 8% della diagonale del canvas (default)
-- **Distribuzione**: uniforme nell'area del cerchio (non uniforme nel raggio)
-- **Determinismo**: stesso seed + stesso pointIndex + stesso lineIndex → stesso punto disperso
-- **Formula**: 
-  - `diagonal = sqrt(canvasWidth² + canvasHeight²)`
-  - `radius = diagonal * 0.08`
-  - `angle = rng() * 2π` (PRNG deterministico)
-  - `distance = sqrt(rng()) * radius` (uniforme in area cerchio)
-  - `dispersedPoint = basePoint + (cos(angle), sin(angle)) * distance`
+- **Prima linea (index 0)**: usa esattamente il punto di ancoraggio base (Alfa/Beta → canvas coordinates)
+  - Nessuna dispersione applicata
+  - Corrisponde visivamente all'anchor point nel debug overlay
+  - Mantiene la connessione semantica tra assi e geometria
 
-Ogni linea (1-7 per keyword) ottiene un punto di origine unico, creando un cluster organico invece di un pattern radiale.
+- **Linee successive (index > 0)**: punti dispersi deterministicamente attorno al punto base
+  - **Raggio di dispersione**: 5% della diagonale del canvas (default, configurabile 3–10%)
+  - **Distribuzione**: uniforme nell'area del cerchio (non uniforme nel raggio)
+  - **Determinismo**: stesso seed + stesso pointIndex + stesso lineIndex → stesso punto disperso
+  - **Formula**: 
+    - `diagonal = sqrt(canvasWidth² + canvasHeight²)`
+    - `radius = diagonal * 0.05`
+    - `angle = rng() * 2π` (PRNG deterministico)
+    - `distance = sqrt(rng()) * radius` (uniforme in area cerchio)
+    - `dispersedPoint = basePoint + (cos(angle), sin(angle)) * distance`
+
+Questo garantisce che:
+
+- La prima linea mantiene la corrispondenza esatta con il punto semantico (Alfa/Beta)
+
+- Le linee successive creano un cluster organico invece di un pattern radiale
+
+- L'anchor point nel debug overlay corrisponde all'origine della prima linea
 
 ## 4. Generazione linee base (Gamma)
 
@@ -58,14 +70,34 @@ Gamma controlla la struttura di base:
   - Gamma ≈ 0    → 1 linea
   - Gamma ≈ ±50  → 4 linee
   - Gamma ≈ ±100 → 7 linee
-- direzione principale (diagonale rispetto al centro)  
+
+- **direzione con clustering** (patch03):
+  - **Range angoli**: 0°–180° (patch03: cambiato da -45°/+45°)
+  - **Clustering**: Le linee si raggruppano in cluster di direzioni simili
+    - Numero di cluster: configurabile via slider (default: 3, range: 2–5)
+    - Cluster distribuiti uniformemente su 0–180°: `clusterAngle = (clusterIndex / clusterCount) * 180`
+    - Assegnazione cluster: deterministica basata su `seed` e `lineIndex`
+  - **Rotazione Gamma**: Gamma ruota tutti i cluster insieme
+    - Formula: `gammaRotation = (gamma / 100) * 180`
+    - Gamma = -100 → rotazione = 0° (cluster in posizione originale)
+    - Gamma = 0 → rotazione = 90°
+    - Gamma = +100 → rotazione = 180°
+  - **Jitter dentro cluster**: Variazione deterministica dentro ogni cluster
+    - Ampiezza jitter: configurabile via slider (default: 30°, range: 10–60°)
+    - Formula: `jitter = (seededRandom(seed:jitter:lineIndex) - 0.5) * clusterSpread`
+  - **Angolo finale**: `(clusterAngle + gammaRotation + jitter) % 180`, clampato a [0, 180]
+
 - lunghezza base: 15%–50% della diagonale del canvas
   - Formula: `t = Math.min(1, Math.abs(gamma) / 100)`
   - Formula: `frac = 0.15 + t * (0.50 - 0.15)` (in [0.15, 0.50])
   - Formula: `baseLength = frac * diag` dove `diag = sqrt(canvasWidth² + canvasHeight²)`
   - Gamma ≈ 0    → 15% della diagonale
   - Gamma ≈ ±100 → 50% della diagonale
-  - **Nota importante**: Tutte le lunghezze finali delle linee sono calcolate attraverso lo stesso pipeline (Gamma + range base + lengthScale), anche quando la keyword non è presente nel dizionario semantico. La generazione fallback/seed-based produce comunque assi (incluso Gamma), e la stessa computazione della lunghezza affetta da `lengthScale` viene applicata. Questo garantisce che Slider1 ("Lunghezza linee") influenzi tutte le linee generate, indipendentemente dal fatto che la keyword sia nota o sconosciuta.
+  - **Profili di lunghezza (patch04)**:
+    - Per ogni linea viene selezionato un moltiplicatore di profilo da un set discreto (es. `[0.5, 0.8, 1.0, 1.3, 1.8]` → molto corta / corta / media / lunga / molto lunga, con differenze più marcate).
+    - La selezione è deterministica e dipende da `seed`, `pointIndex`, `lineIndex`, `clusterIndex` e `clusterCount`.
+    - La lunghezza effettiva di ogni linea diventa `profiledLength = baseLength * lengthProfile`.
+  - **Nota importante**: Tutte le lunghezze finali delle linee sono calcolate attraverso lo stesso pipeline (Gamma + range base + `lengthScale` + profilo di lunghezza), anche quando la keyword non è presente nel dizionario semantico. La generazione fallback/seed-based produce comunque assi (incluso Gamma), e la stessa computazione della lunghezza affetta da `lengthScale` e dai profili viene applicata. Questo garantisce che Slider1 ("Lunghezza linee") influenzi tutte le linee generate, indipendentemente dal fatto che la keyword sia nota o sconosciuta, mantenendo le differenze relative introdotte dai profili.
 
 Output di questo step: un array di connections **senza curvatura definitiva**:
 
@@ -88,6 +120,11 @@ Delta controlla la curvatura delle linee in modo deterministico:
   - Formula: `offsetMag = curvFrac * lineLength`
   - Delta ≈ 0    → curvatura ~5% (linee quasi dritte)
   - Delta ≈ ±100 → curvatura ~30% (linee chiaramente curve)
+  - **Profili di curvatura (patch04)**:
+  - Per ogni linea viene selezionato un moltiplicatore di profilo da un set discreto (es. `[0.4, 0.75, 1.0, 1.5, 2.0]` → molto bassa / bassa / media / alta / molto alta, con differenze più marcate).
+  - La selezione è deterministica e dipende da `seed`, `pointIndex`, `lineIndex`, `clusterIndex` e `clusterCount`.
+  - Il profilo viene applicato come moltiplicatore a `curvatureScale` (Slider2), mantenendo invariata la semantica globale dello slider: `effectiveCurvatureScale = curvatureScale * curvatureProfile`.
+  - È applicata una **correlazione inversa più marcata** tra lunghezza e curvatura: linee più corte tendono ad avere curvatura sensibilmente più alta, linee più lunghe curvatura sensibilmente più bassa.
 - **Direzione della curvatura**: perpendicolare al segmento, determinata dal segno di Delta e jitter deterministico
 - **Jitter deterministico**: variazione ±20% sulla magnitudine della curvatura, basata sul seed
 

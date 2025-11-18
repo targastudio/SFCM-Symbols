@@ -10,7 +10,7 @@
  * Reference: docs/debug/ENGINE_V2_DEBUG_OVERLAY.md
  */
 
-import type { KeywordAnchorDebug, Point } from "../lib/types";
+import type { KeywordAnchorDebug, Point, DirectionClusterDebug } from "../lib/types";
 
 type DebugOverlayProps = {
   width: number;
@@ -19,6 +19,11 @@ type DebugOverlayProps = {
   anchors?: KeywordAnchorDebug[];
   bbox?: { minX: number; minY: number; maxX: number; maxY: number };
   mirrorAxisSegment?: { x1: number; y1: number; x2: number; y2: number };
+  // Direction clustering debug (patch03)
+  directionClusters?: DirectionClusterDebug[];
+  clusterCount?: number;
+  clusterSpread?: number;
+  gamma?: number;
 };
 
 export default function DebugOverlay({
@@ -28,6 +33,10 @@ export default function DebugOverlay({
   anchors,
   bbox,
   mirrorAxisSegment,
+  directionClusters,
+  clusterCount,
+  clusterSpread,
+  gamma,
 }: DebugOverlayProps) {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -63,6 +72,48 @@ export default function DebugOverlay({
   const KEYWORD_LABEL_FONT_SIZE = 12;
   const KEYWORD_LABEL_OFFSET_X = 8;
   const KEYWORD_LABEL_OFFSET_Y = -8;
+  
+  // Direction clustering debug colors (patch03)
+  const CLUSTER_CENTER_COLOR = "#ff00ff"; // Magenta
+  const CLUSTER_CENTER_OPACITY = 0.7;
+  const CLUSTER_CENTER_WIDTH = 2;
+  const CLUSTER_CENTER_LENGTH = 50; // Length of cluster center indicator line
+  const DIRECTION_LINE_COLOR = "#8888ff"; // Light blue (base color)
+  const DIRECTION_LINE_OPACITY_BASE = 0.25;
+  const DIRECTION_LINE_OPACITY_MAX = 1.0;
+  const DIRECTION_LINE_WIDTH_BASE = 0.6;
+  const DIRECTION_LINE_WIDTH_MAX = 3.0;
+  const DIRECTION_LINE_LENGTH = 30; // Length of direction indicator line
+  const GAMMA_ROTATION_COLOR = "#ff8800"; // Orange
+  const GAMMA_ROTATION_OPACITY = 0.6;
+  const GAMMA_ROTATION_WIDTH = 1.5;
+  
+  // Helper function to convert angle (degrees) to point on circle
+  const angleToPoint = (angleDeg: number, centerX: number, centerY: number, radius: number): Point => {
+    const angleRad = (angleDeg * Math.PI) / 180;
+    return {
+      x: centerX + Math.cos(angleRad) * radius,
+      y: centerY - Math.sin(angleRad) * radius, // Negative because SVG Y increases downward
+    };
+  };
+  
+  // Get unique cluster centers (before Gamma rotation)
+  const uniqueClusterCenters = directionClusters && clusterCount
+    ? Array.from({ length: clusterCount }, (_, i) => {
+        const clusterAngle = (i / clusterCount) * 180;
+        return { clusterIndex: i, clusterAngle };
+      })
+    : [];
+  
+  // Get unique final cluster centers (after Gamma rotation)
+  const uniqueFinalClusterCenters = directionClusters && clusterCount && gamma !== undefined
+    ? Array.from({ length: clusterCount }, (_, i) => {
+        const clusterAngle = (i / clusterCount) * 180;
+        const gammaRotation = (gamma / 100) * 180;
+        const finalClusterAngle = (clusterAngle + gammaRotation) % 180;
+        return { clusterIndex: i, finalClusterAngle };
+      })
+    : [];
 
   return (
     <g pointerEvents="none">
@@ -200,6 +251,115 @@ export default function DebugOverlay({
             fill={ANCHOR_DOT_COLOR}
             opacity={ANCHOR_CROSSHAIR_OPACITY}
           />
+        </>
+      )}
+
+      {/* Direction clustering visualization (patch03) */}
+      {directionClusters && directionClusters.length > 0 && anchor && (
+        <>
+          {/* Cluster centers (before Gamma rotation) - shown as dashed lines */}
+          {uniqueClusterCenters.map(({ clusterIndex, clusterAngle }) => {
+            const startPoint = angleToPoint(clusterAngle, anchor.x, anchor.y, 10);
+            const endPoint = angleToPoint(clusterAngle, anchor.x, anchor.y, CLUSTER_CENTER_LENGTH);
+            return (
+              <line
+                key={`cluster-center-${clusterIndex}`}
+                x1={startPoint.x}
+                y1={startPoint.y}
+                x2={endPoint.x}
+                y2={endPoint.y}
+                stroke={CLUSTER_CENTER_COLOR}
+                strokeWidth={CLUSTER_CENTER_WIDTH}
+                strokeDasharray="4 4"
+                opacity={CLUSTER_CENTER_OPACITY}
+              />
+            );
+          })}
+          
+          {/* Final cluster centers (after Gamma rotation) - shown as solid lines */}
+          {uniqueFinalClusterCenters.map(({ clusterIndex, finalClusterAngle }) => {
+            const startPoint = angleToPoint(finalClusterAngle, anchor.x, anchor.y, 10);
+            const endPoint = angleToPoint(finalClusterAngle, anchor.x, anchor.y, CLUSTER_CENTER_LENGTH);
+            return (
+              <line
+                key={`final-cluster-center-${clusterIndex}`}
+                x1={startPoint.x}
+                y1={startPoint.y}
+                x2={endPoint.x}
+                y2={endPoint.y}
+                stroke={CLUSTER_CENTER_COLOR}
+                strokeWidth={CLUSTER_CENTER_WIDTH}
+                opacity={CLUSTER_CENTER_OPACITY * 1.2}
+              />
+            );
+          })}
+          
+          {/* Direction indicators for each line - small lines showing final direction */}
+          {directionClusters.map((clusterDebug, index) => {
+            const startPoint = angleToPoint(clusterDebug.finalDirection, anchor.x, anchor.y, 5);
+            const endPoint = angleToPoint(clusterDebug.finalDirection, anchor.x, anchor.y, DIRECTION_LINE_LENGTH);
+            // Use different hues for different clusters
+            const clusterColorHue = (clusterDebug.clusterIndex / (clusterCount || 3)) * 360;
+
+            // patch04: encode length/curvature profiles visually
+            const lengthProfile = clusterDebug.lengthProfile ?? 1.0;
+            const curvatureProfile = clusterDebug.curvatureProfile ?? 1.0;
+
+            // Map lengthProfile to stroke width within an amplified range
+            const clampedLengthProfile = Math.max(0.3, Math.min(2.0, lengthProfile));
+            const strokeWidth =
+              DIRECTION_LINE_WIDTH_BASE +
+              (DIRECTION_LINE_WIDTH_MAX - DIRECTION_LINE_WIDTH_BASE) *
+                ((clampedLengthProfile - 0.4) / (1.8 - 0.4));
+
+            // Map curvatureProfile to opacity (more curved → more opaque, more dramatic)
+            const clampedCurvProfile = Math.max(0.3, Math.min(2.0, curvatureProfile));
+            const opacity =
+              DIRECTION_LINE_OPACITY_BASE +
+              (DIRECTION_LINE_OPACITY_MAX - DIRECTION_LINE_OPACITY_BASE) *
+                ((clampedCurvProfile - 0.4) / (1.8 - 0.4));
+
+            return (
+              <line
+                key={`direction-${index}`}
+                x1={startPoint.x}
+                y1={startPoint.y}
+                x2={endPoint.x}
+                y2={endPoint.y}
+                stroke={`hsl(${clusterColorHue}, 70%, 60%)`}
+                strokeWidth={strokeWidth}
+                opacity={opacity}
+              />
+            );
+          })}
+          
+          {/* Gamma rotation indicator - arc showing rotation */}
+          {gamma !== undefined && anchor && (
+            <>
+              <text
+                x={anchor.x + 60}
+                y={anchor.y - 60}
+                fill={GAMMA_ROTATION_COLOR}
+                fontSize={11}
+                opacity={GAMMA_ROTATION_OPACITY}
+                fontFamily="monospace"
+              >
+                γ: {gamma.toFixed(1)}° ({((gamma / 100) * 180).toFixed(1)}° rot)
+              </text>
+              {clusterCount !== undefined && (
+                <text
+                  x={anchor.x + 60}
+                  y={anchor.y - 45}
+                  fill={GAMMA_ROTATION_COLOR}
+                  fontSize={11}
+                  opacity={GAMMA_ROTATION_OPACITY}
+                  fontFamily="monospace"
+                >
+                  Clusters: {clusterCount}, Spread: {clusterSpread?.toFixed(0)}°
+                </text>
+              )}
+            </>
+          )}
         </>
       )}
     </g>

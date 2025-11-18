@@ -31,7 +31,7 @@ Usato per:
 1. Partenza da keyword.  
 2. Conversione deterministica tramite dizionario/LLM → valori Alfa/Beta/Gamma/Delta.  
 3. **Posizione primaria** da Alfa/Beta (coordinate normalizzate → coordinate canvas).  
-4. **Dispersione punti origine** (patch02): ogni linea ottiene un punto di origine unico, disperso deterministicamente attorno al punto base (8% della diagonale del canvas).  
+4. **Dispersione punti origine** (patch02): ogni linea ottiene un punto di origine unico, disperso deterministicamente attorno al punto base (5% della diagonale del canvas, range consigliato 3–10%).  
 5. **Generazione linee base** da Gamma + definizione della curvatura/irregolarità da Delta.  
 6. **Mirroring finale sulla geometria**: applicato sull'array di connections dopo Gamma/Delta, come post-processing deterministico (patch01_SPEC_03_mirroring_revision).  
 7. **Output finale**: elenco di curve quadratiche con arrowhead fisse.  

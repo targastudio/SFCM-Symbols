@@ -6,6 +6,127 @@ Entries are listed in reverse chronological order (most recent first).
 
 ---
 
+## 2025-01-XX – PATCH04: Length & Curvature Clustering
+
+### PATCH04 – Length & Curvature Clustering per Point
+
+**Per-line length and curvature profiles within each Alfa/Beta point (patch04)**
+
+- **Changed behavior**:
+  - **Old**: All lines from the same point shared essentially the same base length (Gamma + small ±5% jitter) and curvature (Delta + small ±20% jitter).
+  - **New**: Each line from the same point receives:
+    - a **length profile multiplier** selected from a discrete set `[0.6, 0.85, 1.0, 1.2, 1.4]` (very short → very long),
+    - a **curvature profile multiplier** selected from `[0.5, 0.8, 1.0, 1.3, 1.6]` (very low → very high curvature),
+    - with a soft **inverse correlation** between length and curvature (shorter lines tend to be more curved, longer lines more straight).
+
+- **Implementation**:
+  - New helpers `computeLengthProfileMultiplier` and `computeCurvatureProfileMultiplier` in `lib/engine_v2/curves.ts`:
+    - Use deterministic PRNG (`seededRandom`) with seeds of the form  
+      `lenProfile: seed, pointIndex, lineIndex, clusterIndex, clusterCount` and  
+      `curvProfile: seed, pointIndex, lineIndex, clusterIndex, clusterCount`.
+    - Select discrete multipliers for per-line length/curvature profiles.
+  - `generateCurveFromPoint` now:
+    - Computes `baseLength` via existing `getLineLength` (Gamma + Slider1) and then `profiledLength = baseLength * lengthProfile`.
+    - Uses `profiledLength` for end-point and curvature calculations.
+    - Applies curvature profiles via `effectiveCurvatureScale = curvatureScale * curvatureProfile` when calling `applyDeltaIrregularity`.
+  - `DirectionClusterDebug` in `lib/types.ts` extended with optional `lengthProfile` and `curvatureProfile` fields.
+  - `DebugOverlay` (`components/DebugOverlay.tsx`) updated so that:
+    - Direction indicator stroke width encodes `lengthProfile`.
+    - Direction indicator opacity encodes `curvatureProfile`.
+
+- **Visual impact**:
+  - Lines emerging from the same Alfa/Beta point now show a clear hierarchy of lengths and curvatures (short/long, straight/curved) within each direction cluster.
+  - Symbols appear more varied and expressive while preserving direction clustering from patch03 and point dispersion from patch02.
+
+- **Technical details**:
+  - Deterministic: same keywords + seed + sliders + canvas size → same profiles and geometry.
+  - Slider semantics unchanged:
+    - Slider1 (`lengthScale`) remains a **global** length multiplier applied uniformly on top of per-line profiles.
+    - Slider2 (`curvatureScale`) remains a **global** curvature multiplier, modulated per-line by `curvatureProfile`.
+    - Slider3/Slider4 (`clusterCount`, `clusterSpread`) remain purely directional and are reused only as parameters to the profile selection.
+
+- **Compatibility**:
+  - ✅ Non-breaking change (no public API changes).
+  - ✅ Determinism preserved.
+  - ✅ Slider semantics preserved (global controls on top of per-line variation).
+  - ✅ Performance impact negligible (few extra PRNG calls and multiplications per line).
+
+**Files affected:**
+- `lib/engine_v2/curves.ts` (length/curvature profiles and integration into `generateCurveFromPoint`)
+- `lib/types.ts` (extended `DirectionClusterDebug` with profile fields)
+- `components/DebugOverlay.tsx` (visual encoding of profiles)
+
+**Documentation:**
+- `docs/patches/patch_04_Length_and_Curvature_Clustering.md` (patch specification, updated as implemented)
+- `docs/patches/PATCHES_INDEX.md` (added patch04 entry)
+- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (Gamma/Delta sections updated with profiles and correlation)
+- `docs/development/debug/ENGINE_V2_DEBUG_OVERLAY.md` (documented profile visualization)
+
+---
+
+## 2025-01-XX – PATCH03: Direction Clustering
+
+### PATCH03 – Direction Clustering
+
+**Clustering of line directions for visual variety (patch03)**
+
+- **Changed behavior**:
+  - **Old**: Line directions mapped from Gamma [-100, +100] to angle range [-45°, +45°] with small jitter
+  - **New**: Line directions use clustering system with range [0°, 180°]
+
+- **Implementation**:
+  - Modified `getLineDirection()` in `lib/engine_v2/curves.ts` to implement clustering
+  - Added helper function `seededRandom()` in `lib/seed.ts` for convenience
+  - Lines are grouped into clusters of similar directions
+  - Cluster assignment: deterministic based on `seed` and `lineIndex`
+  - Gamma rotates all clusters together
+  - In-cluster jitter: configurable spread within each cluster
+
+- **Clustering algorithm**:
+  - Cluster assignment: `clusterIndex = floor(seededRandom(seed:cluster:lineIndex) * clusterCount)`
+  - Cluster center: `clusterAngle = (clusterIndex / clusterCount) * 180` (distributed evenly across 0-180°)
+  - Gamma rotation: `gammaRotation = (gamma / 100) * 180` (rotates all clusters)
+  - In-cluster jitter: `jitter = (seededRandom(seed:jitter:lineIndex) - 0.5) * clusterSpread`
+  - Final angle: `(clusterAngle + gammaRotation + jitter) % 180`, clamped to [0, 180]
+
+- **Configuration parameters**:
+  - `clusterCount`: Number of direction clusters (default: 3, range: 2-5)
+  - `clusterSpread`: Spread angle within each cluster in degrees (default: 30°, range: 10-60°)
+
+- **UI sliders**:
+  - **Slider3: "Numero Cluster"** - controls `clusterCount` (0-100 → 2-5 clusters)
+  - **Slider4: "Ampiezza Cluster"** - controls `clusterSpread` (0-100 → 10-60°)
+
+- **Visual impact**:
+  - **Before**: Lines had similar directions (all within -45° to +45°), uniform appearance
+  - **After**: Lines grouped into clusters, full 0-180° directional coverage, more varied patterns
+
+- **Technical details**:
+  - Range changed from [-45°, +45°] to [0°, 180°]
+  - Deterministic: same seed + lineIndex → same cluster assignment and jitter
+  - Seed format: `${seed}:cluster:${lineIndex}` for cluster assignment, `${seed}:jitter:${lineIndex}` for jitter
+  - Fully compatible with all existing features (point dispersion, mirroring, other sliders)
+
+- **Compatibility**:
+  - ✅ Non-breaking change (no API modifications to public functions)
+  - ✅ Determinism preserved (same input → same output)
+  - ✅ Works with all canvas sizes and features
+  - ✅ Compatible with point dispersion (patch02), mirroring (patch01), and all sliders
+
+**Files affected:**
+- `lib/seed.ts` (added `seededRandom` helper)
+- `lib/engine_v2/curves.ts` (modified `getLineDirection`, updated `generateCurveFromPoint`)
+- `lib/engine_v2/engine.ts` (added clustering options to `EngineV2Options`)
+- `app/page.tsx` (added UI sliders for clusterCount and clusterSpread)
+
+**Documentation:**
+- `docs/patches/patch_03_Direction_Clustering.md` (patch specification)
+- `docs/patches/PATCHES_INDEX.md` (updated with patch03 entry)
+- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated direction section)
+- `docs/specs/engine_v2/ENGINE_V2_SLIDER_MAPPING.md` (added slider documentation)
+
+---
+
 ## 2025-01-XX – PATCH02: Point Dispersion at Line Origin
 
 ### PATCH02 – Point Dispersion
@@ -19,7 +140,8 @@ Entries are listed in reverse chronological order (most recent first).
 - **Implementation**:
   - New function: `generateDispersedStartPoint()` in `lib/engine_v2/curves.ts`
   - Modifies `generateCurveFromPoint()` to generate a unique dispersed start point for each line
-  - Dispersion radius: 8% of canvas diagonal (default)
+  - Dispersion radius: 5% of canvas diagonal (default, adjustable constant)
+  - Recommended range: 3–10% to keep clusters cohesive without losing variation
   - Distribution: uniform in circle area (not uniform in radius)
   - Deterministic: same seed + pointIndex + lineIndex → same dispersed point
 
@@ -47,6 +169,77 @@ Entries are listed in reverse chronological order (most recent first).
 - `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (patch specification)
 - `docs/patches/PATCHES_INDEX.md` (updated with patch02 entry)
 - `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated pipeline with dispersion step)
+
+### patch02 Refinement (2025-01-XX)
+
+**Modified behavior:**
+
+- First line (index 0) now starts from exact Alfa/Beta position (no dispersion)
+
+- Subsequent lines (index > 0) continue to use dispersed start points
+
+- Maintains visual correspondence between debug anchor point and geometry
+
+**Rationale:**
+
+- Anchor point in debug overlay now corresponds to first line's origin
+
+- Semantically clearer: first line = semantic position (Alfa/Beta), others = variation around it
+
+- Preserves organic cluster appearance for remaining lines
+
+**Implementation:**
+
+- Changed dispersedStart assignment in `generateCurveFromPoint` to use ternary operator
+
+- `dispersedStart = i === 0 ? start : generateDispersedStartPoint(...)`
+
+**Compatibility:**
+
+- ✅ Non-breaking change (no API modifications)
+
+- ✅ Determinism preserved (same seed → same output)
+
+- ✅ Full backward compatibility maintained
+
+**Files modified:**
+
+- `lib/engine_v2/curves.ts` (dispersedStart assignment logic)
+
+- `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (refinement section)
+
+- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (section 3 updated)
+
+### patch02 Dispersion Radius Tuning (2025-01-XX)
+
+**Change:**
+
+- Default dispersion radius reduced from 8% → 5% of the canvas diagonal.
+- Recommended sliderless tuning range narrowed from 5–15% → 3–10% to prevent overly scattered clusters.
+
+**Rationale:**
+
+- Previous default placed generated origins too far apart, weakening the perceived link to the Alfa/Beta anchor.
+- 5% keeps points visually clustered while preserving the organic feel delivered by dispersion.
+
+**Implementation:**
+
+- Updated `generateDispersedStartPoint` default parameter to `0.05`.
+- Updated `generateCurveFromPoint` to pass `0.05` when dispersing lines with `index > 0`.
+- Refreshed patch/spec documents (pipeline + overview) with the new defaults and range guidance.
+
+**Compatibility:**
+
+- ✅ Determinism preserved (same seed + pointIndex + lineIndex → same dispersed point)
+- ✅ Fully compatible with existing patch02 refinement (first line uses anchor point)
+- ✅ Non-breaking change (no API or slider updates required)
+
+**Files modified:**
+
+- `lib/engine_v2/curves.ts` (default dispersion constant + call site)
+- `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (configuration + refinement notes)
+- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (dispersion step)
+- `docs/specs/engine_v2/ENGINE_V2_OVERVIEW.md` (pipeline overview)
 
 ---
 
@@ -253,4 +446,3 @@ Future changelog entries should follow this structure:
 ```
 
 ---
-

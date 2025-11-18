@@ -1,0 +1,99 @@
+{
+  "ordine": {
+    "ordine_caos": 9.0,
+    "conflitto_consenso": 3.0,
+    "teoria_pratica": 4.0,
+    "individuale_collettivo": 2.0,
+    "naturale_artificiale": 1.0,
+    "locale_globale": 2.0
+  },
+  "caos": {
+    "ordine_caos": -9.0,
+    "conflitto_consenso": -5.0,
+    "teoria_pratica": -2.0,
+    "individuale_collettivo": 0.0,
+    "naturale_artificiale": 3.0,
+    "locale_globale": 5.0
+  },
+  "conflitto": {
+    "ordine_caos": -3.0,
+    "conflitto_consenso": -9.0,
+    "teoria_pratica": 1.0,
+    "individuale_collettivo": 1.0,
+    "naturale_artificiale": 0.0,
+    "locale_globale": 3.0
+  },
+  "consenso": {
+    "ordine_caos": 4.0,
+    "conflitto_consenso": 9.0,
+    "teoria_pratica": 2.0,
+    "individuale_collettivo": 5.0,
+    "naturale_artificiale": 0.0,
+    "locale_globale": 2.0
+  },
+  "teoria": {
+    "ordine_caos": 3.0,
+    "conflitto_consenso": 1.0,
+    "teoria_pratica": -9.0,
+    "individuale_collettivo": -1.0,
+    "naturale_artificiale": 2.0,
+    "locale_globale": 4.0
+  },
+  "pratica": {
+    "ordine_caos": 2.0,
+    "conflitto_consenso": 2.0,
+    "teoria_pratica": 9.0,
+    "individuale_collettivo": 1.0,
+    "naturale_artificiale": 1.0,
+    "locale_globale": 3.0
+  },
+  "individuale": {
+    "ordine_caos": 0.0,
+    "conflitto_consenso": -1.0,
+    "teoria_pratica": 0.0,
+    "individuale_collettivo": -9.0,
+    "naturale_artificiale": 0.0,
+    "locale_globale": -2.0
+  },
+  "collettivo": {
+    "ordine_caos": 1.0,
+    "conflitto_consenso": 4.0,
+    "teoria_pratica": 2.0,
+    "individuale_collettivo": 9.0,
+    "naturale_artificiale": 0.0,
+    "locale_globale": 5.0
+  },
+  "naturale": {
+    "ordine_caos": -1.0,
+    "conflitto_consenso": 0.0,
+    "teoria_pratica": -2.0,
+    "individuale_collettivo": 2.0,
+    "naturale_artificiale": -9.0,
+    "locale_globale": -1.0
+  },
+  "artificiale": {
+    "ordine_caos": 2.0,
+    "conflitto_consenso": 1.0,
+    "teoria_pratica": 4.0,
+    "individuale_collettivo": 1.0,
+    "naturale_artificiale": 9.0,
+    "locale_globale": 3.0
+  },
+  "locale": {
+    "ordine_caos": 1.0,
+    "conflitto_consenso": 0.0,
+    "teoria_pratica": 0.0,
+    "individuale_collettivo": 1.0,
+    "naturale_artificiale": 0.0,
+    "locale_globale": -9.0
+  },
+  "globale": {
+    "ordine_caos": 1.0,
+    "conflitto_consenso": 2.0,
+    "teoria_pratica": 2.0,
+    "individuale_collettivo": 3.0,
+    "naturale_artificiale": 1.0,
+    "locale_globale": 9.0
+  }
+}
+

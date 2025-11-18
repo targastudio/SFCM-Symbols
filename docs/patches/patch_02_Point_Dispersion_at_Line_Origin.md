@@ -68,7 +68,7 @@ function generateDispersedStartPoint(
   pointIndex: number,
   canvasWidth: number,
   canvasHeight: number,
-  dispersionRadius: number = 0.08 // 8% of diagonal by default
+  dispersionRadius: number = 0.05 // 5% of diagonal by default
 ): Point
 ```
 
@@ -114,7 +114,7 @@ for (let i = 0; i < numLines; i++) {
     pointIndex,
     canvasWidth,
     canvasHeight,
-    0.08 // 8% of diagonal
+    0.05 // 5% of diagonal
   );
   const direction = getLineDirection(axes.gamma, dispersedStart.x, dispersedStart.y, `${seed}:line:${i}`);
   // ... rest of curve generation using dispersedStart
@@ -127,13 +127,13 @@ for (let i = 0; i < numLines; i++) {
 
 ## 4.1 Dispersion Radius
 
-**Default:** 8% of canvas diagonal  
-**Range:** 5-15% of canvas diagonal (configurable)  
+**Default:** 5% of canvas diagonal  
+**Range:** 3-10% of canvas diagonal (configurable)  
 **Effect:**
-- 5%: Subtle dispersion, lines stay close to base point
-- 8%: Moderate dispersion (default)
-- 10%: Noticeable dispersion
-- 15%: Wide dispersion, more organic feel
+- 3%: Minimal dispersion, nearly unified starting point
+- 5%: Subtle dispersion (default) that keeps lines visually clustered
+- 8%: Moderate dispersion for added variation
+- 10%: Noticeable dispersion, more organic feel
 
 **Future consideration:** Could be exposed as a slider parameter (Slider3 or Slider4)
 
@@ -216,10 +216,91 @@ Potential future improvements:
 
 ---
 
-# 10. References
+# 10. Refinement (2025-01-XX)
+
+### Modified Behavior
+
+**Change:**
+
+- **First line (index 0)**: Now uses the exact base point from Alfa/Beta axes (no dispersion applied)
+
+- **Subsequent lines (index > 0)**: Continue to use dispersed points around the base point (original patch_02 behavior)
+
+**Rationale:**
+
+- Maintains visual correspondence between anchor point and geometry
+
+- First line "anchors" the cluster to the semantic position (Alfa/Beta)
+
+- Subsequent lines create organic variation around this anchor
+
+- Debug overlay anchor point now corresponds to first line's origin point
+
+**Implementation:**
+
+```typescript
+// In generateCurveFromPoint loop:
+const dispersedStart = i === 0
+  ? start // First line: exact anchor point (no dispersion)
+  : generateDispersedStartPoint(...); // Other lines: dispersed around base point
+```
+
+**Visual Impact:**
+
+- **Before refinement**: All lines started from dispersed points, anchor was disconnected from geometry
+
+- **After refinement**: First line starts from exact anchor point, remaining lines create organic cluster
+
+- Debug overlay anchor point now visually corresponds to first line's origin
+
+- Semantic clarity improved: first line = semantic position (Alfa/Beta), others = variation
+
+**Compatibility:**
+
+- ✅ Non-breaking change (no API modifications)
+
+---
+
+# 11. Refinement — Dispersion Radius Tuning (2025-01-XX)
+
+### Modified Behavior
+
+- Default dispersion radius reduced from **8%** to **5%** of the canvas diagonal.
+- Recommended adjustable range tightened to **3–10%** to avoid over-dispersed clusters.
+
+### Rationale
+
+- Previous 8% default produced points that were visually too distant from each other, weakening the connection to the anchor point.
+- A 5% default keeps the cluster tighter and more legible while still delivering organic variation.
+- Updated range guidance reflects the sweet spot discovered during QA: 3% for minimal variation, 10% for maximum spread without breaking composition.
+
+### Implementation
+
+- `generateDispersedStartPoint` default parameter changed to `0.05`.
+- `generateCurveFromPoint` now passes `0.05` when generating dispersed origins for lines with `index > 0`.
+
+### Documentation
+
+- Updated all spec references (pipeline + overview) to mention 5% default and new range.
+- Expanded configuration notes in section 4 with new default/range descriptions.
+
+### Compatibility
+
+- ✅ Determinism preserved (same seed + indexes → same dispersed point).
+- ✅ Fully compatible with existing refinements (first line uses anchor point).
+- ✅ No API surface changes.
+
+- ✅ Determinism preserved (same input → same output)
+
+- ✅ Works with all canvas sizes and features
+
+- ✅ Compatible with debug overlay and mirroring
+
+---
+
+# 12. References
 
 - **Current implementation:** `lib/engine_v2/curves.ts` - `generateCurveFromPoint`
 - **PRNG system:** `lib/seed.ts` - `prng` function
 - **Position mapping:** `lib/engine_v2/position.ts` - `axesToPixelPosition`
 - **Related docs:** `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`
-

@@ -32,6 +32,38 @@
   - Non influisce sul numero di linee (Gamma) o sulla lunghezza (Slider1).
 - **Stato**: ✅ **Implementato e attivo**
 
+### Slider3: "Numero Cluster" (patch03)
+- **UI label**: "Numero Cluster"
+- **UI range**: 0–100 (integer)
+- **Default value**: 33 (corrisponde a clusterCount = 3)
+- **Parametro ENGINE_V2**: `clusterCount` (in `EngineV2Options`)
+- **Mapping formula**: `clusterCount = Math.round(2 + (slider / 100) * 3)`
+  - `slider = 0`   → `clusterCount = 2`   (2 cluster)
+  - `slider = 33`  → `clusterCount = 3`   (3 cluster, default)
+  - `slider = 100` → `clusterCount = 5`   (5 cluster)
+- **Effetto**: 
+  - Controlla il numero di cluster di direzioni in cui vengono raggruppate le linee.
+  - Più cluster = più varietà di direzioni.
+  - Meno cluster = direzioni più raggruppate.
+  - I cluster sono distribuiti uniformemente su 0–180°.
+- **Stato**: ✅ **Implementato e attivo** (patch03)
+
+### Slider4: "Ampiezza Cluster" (patch03)
+- **UI label**: "Ampiezza Cluster"
+- **UI range**: 0–100 (integer)
+- **Default value**: 40 (corrisponde a clusterSpread = 30°)
+- **Parametro ENGINE_V2**: `clusterSpread` (in `EngineV2Options`)
+- **Mapping formula**: `clusterSpread = 10 + (slider / 100) * 50` (in gradi)
+  - `slider = 0`   → `clusterSpread = 10°`  (cluster stretti)
+  - `slider = 40`  → `clusterSpread = 30°`  (default)
+  - `slider = 100` → `clusterSpread = 60°`  (cluster ampi)
+- **Effetto**: 
+  - Controlla l'ampiezza del jitter dentro ogni cluster.
+  - Valore basso = linee in cluster hanno direzioni molto simili.
+  - Valore alto = più variazione dentro ogni cluster.
+  - Non influisce sul numero di cluster (Slider3) o sulla rotazione Gamma.
+- **Stato**: ✅ **Implementato e attivo** (patch03)
+
 ## 2. Slider placeholder (non ancora collegati)
 
 Gli slider seguenti sono mantenuti nell'interfaccia ma non hanno ancora logica attiva:

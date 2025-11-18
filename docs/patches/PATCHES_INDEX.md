@@ -41,3 +41,40 @@ Indice delle patch applicate all'ENGINE_V2 all’interno del progetto **SFCM SYM
 - `ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con dispersione punti).  
 - `CHANGELOG_SFCM_SYMBOLS.md` (entry patch02).
 
+---
+
+## patch03 — Clustering direzioni linee
+
+- **ID:** patch_03_Direction_Clustering  
+- **Data:** 2025-01-XX  
+- **Scope:** miglioramento visivo della generazione delle direzioni delle linee.  
+- **Tipo:** Non-breaking, feature enhancement (miglioramento visivo).  
+- **Implementazione:** `lib/engine_v2/curves.ts` (modifica a `getLineDirection` con clustering), `lib/seed.ts` (helper `seededRandom`), `app/page.tsx` (slider UI).  
+- **Contractor:** Cursor AI agent.  
+
+### Documenti correlati
+
+- `patch_03_Direction_Clustering.md` (dettaglio spec della patch).  
+- `ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con clustering direzioni).  
+- `ENGINE_V2_SLIDER_MAPPING.md` (documentazione slider clusterCount e clusterSpread).  
+- `CHANGELOG_SFCM_SYMBOLS.md` (entry patch03).
+
+---
+
+## patch04 — Clustering lunghezze e curvature per linea
+
+- **ID:** patch_04_Length_and_Curvature_Clustering  
+- **Data:** 2025-01-XX  
+- **Scope:** miglioramento visivo della struttura delle linee (lunghezza e curvatura) all'interno di ogni punto Alfa/Beta.  
+- **Tipo:** Non-breaking, feature enhancement (miglioramento visivo).  
+- **Implementazione:** `lib/engine_v2/curves.ts` (profili di lunghezza/curvatura per linea), `lib/types.ts` (estensione `DirectionClusterDebug`), `components/DebugOverlay.tsx` (visualizzazione profili).  
+- **Contractor:** Cursor AI agent.  
+
+### Documenti correlati
+
+- `patch_04_Length_and_Curvature_Clustering.md` (dettaglio spec della patch).  
+- `ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con profili di lunghezza/curvatura per linea).  
+- `ENGINE_V2_SLIDER_MAPPING.md` (note su interazione Slider1/Slider2 con i profili).  
+- `ENGINE_V2_DEBUG_OVERLAY.md` (debug overlay aggiornato con visualizzazione profili).  
+- `CHANGELOG_SFCM_SYMBOLS.md` (entry patch04).
+

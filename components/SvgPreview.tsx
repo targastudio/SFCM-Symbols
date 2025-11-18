@@ -251,6 +251,10 @@ export default function SvgPreview({
             anchors={debugInfo?.anchors}
             bbox={debugInfo?.bbox}
             mirrorAxisSegment={debugInfo?.mirrorAxisSegment}
+            directionClusters={debugInfo?.directionClusters}
+            clusterCount={debugInfo?.clusterCount}
+            clusterSpread={debugInfo?.clusterSpread}
+            gamma={debugInfo?.gamma}
           />
         )}
       </svg>

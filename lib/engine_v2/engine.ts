@@ -34,6 +34,8 @@ import { applyFinalMirroring, computeMirroringDebugInfo } from "./finalMirroring
 export type EngineV2Options = {
   lengthScale?: number; // Multiplier for line length (default: 1.0)
   curvatureScale?: number; // Multiplier for curve intensity (default: 1.0)
+  clusterCount?: number; // Number of direction clusters (default: 3)
+  clusterSpread?: number; // Spread angle within each cluster in degrees (default: 30)
 };
 
 /**
@@ -125,6 +127,8 @@ export async function generateEngineV2(
   // Normalize options with defaults
   const lengthScale = options.lengthScale ?? 1.0;
   const curvatureScale = options.curvatureScale ?? 1.0;
+  const clusterCount = options.clusterCount ?? 3;
+  const clusterSpread = options.clusterSpread ?? 30;
   if (keywords.length === 0) {
     return { connections: [] };
   }
@@ -184,10 +188,13 @@ export async function generateEngineV2(
     quadrant: number;
     isMirrored: boolean;
   }> = [];
+  
+  // Collect direction clustering debug info (patch03)
+  const allDirectionClusters: import("../types").DirectionClusterDebug[] = [];
 
   for (let i = 0; i < basePoints.length; i++) {
     const point = basePoints[i];
-    const curves = generateCurveFromPoint(
+    const result = generateCurveFromPoint(
       point.pixel,
       point.axes,
       canvasWidth,
@@ -197,15 +204,22 @@ export async function generateEngineV2(
       point.quadrant,
       false, // isMirrored: always false now (mirroring happens at final step)
       lengthScale, // Applied to ALL curves, including those from unknown keywords
-      curvatureScale // Applied to ALL curves, including those from unknown keywords
+      curvatureScale, // Applied to ALL curves, including those from unknown keywords
+      clusterCount, // Direction clustering (patch03)
+      clusterSpread // Direction clustering spread (patch03)
     );
 
     // Set keyword for each curve
-    curves.forEach((c) => {
+    result.curves.forEach((c) => {
       c.keyword = point.keyword;
     });
 
-    allCurves.push(...curves);
+    allCurves.push(...result.curves);
+    
+    // Collect direction clustering debug info
+    if (includeDebug) {
+      allDirectionClusters.push(...result.directionClusters);
+    }
   }
 
   // Step 4: Convert to BranchedConnection format for rendering
@@ -224,7 +238,7 @@ export async function generateEngineV2(
   // Mirroring is applied AFTER curve generation as a final geometry step
   const mirroredConnections = applyFinalMirroring(connections, canvasWidth, canvasHeight, seed);
 
-  // Capture debug info (anchor point BEFORE mirroring, plus mirroring info)
+  // Capture debug info (anchor point BEFORE mirroring, plus mirroring info, plus clustering debug)
   const debug: EngineV2DebugInfo | undefined = includeDebug && basePoints.length > 0
     ? {
         alfa: keywordVectors[0].axes.alfa,
@@ -241,6 +255,11 @@ export async function generateEngineV2(
           mirrorAxisType: mirroringDebugInfo.mirrorAxisType,
           mirrorAxisSegment: mirroringDebugInfo.mirrorAxisSegment,
         }),
+        // Direction clustering debug (patch03)
+        directionClusters: allDirectionClusters.length > 0 ? allDirectionClusters : undefined,
+        clusterCount,
+        clusterSpread,
+        gamma: keywordVectors[0].axes.gamma, // Use first keyword's gamma value
       }
     : undefined;
 

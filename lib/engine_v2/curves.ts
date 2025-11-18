@@ -8,15 +8,15 @@
  * 
  * Gamma controls:
  * - Number of lines: 1-7 (see getNumberOfLines)
- * - Direction: -45° to +45° (see getLineDirection)
+ * - Direction: 0° to 180° with clustering (see getLineDirection)
  * - Length: 15% to 50% of canvas diagonal (see getLineLength)
  * 
  * Delta controls:
  * - Curvature magnitude: 5% to 30% of line length (see applyDeltaIrregularity)
  */
 
-import type { AxesV2, Point, Quadrant } from "../types";
-import { prng } from "../seed";
+import type { AxesV2, Point, Quadrant, DirectionClusterDebug } from "../types";
+import { prng, seededRandom } from "../seed";
 
 // Constants from ENGINE_V2_GEOMETRY_PIPELINE.md section 5
 const GAMMA_NORMALIZED_MIN = -100; // Gamma range minimum
@@ -24,8 +24,9 @@ const GAMMA_NORMALIZED_MAX = 100; // Gamma range maximum
 const GAMMA_NORMALIZED_RANGE = 200; // Gamma range span (max - min)
 const NUM_LINES_MIN = 1; // Minimum number of lines per point
 const NUM_LINES_MAX = 7; // Maximum number of lines per point
-const DIRECTION_ANGLE_MIN = -45; // Minimum direction angle in degrees
-const DIRECTION_ANGLE_MAX = 45; // Maximum direction angle in degrees
+// Direction clustering constants (patch03)
+const DIRECTION_ANGLE_MIN = 0; // Minimum direction angle in degrees (patch03: changed from -45)
+const DIRECTION_ANGLE_MAX = 180; // Maximum direction angle in degrees (patch03: changed from 45)
 const LINE_LENGTH_MIN_FRAC = 0.15; // 15% of canvas diagonal
 const LINE_LENGTH_MAX_FRAC = 0.50; // 50% of canvas diagonal
 const DIRECTION_JITTER_RANGE = 10; // ±5 degrees jitter
@@ -77,27 +78,169 @@ export function getNumberOfLines(gamma: number): number {
 }
 
 /**
- * Determines line direction (angle) based on Gamma
+ * Determines line direction (angle) based on Gamma with clustering
  * 
- * Reference: docs/ENGINE_V2_GEOMETRY_PIPELINE.md section 5
- * Angle range: -45° to +45° (diagonal orientation from center)
- * Uses deterministic RNG based on seed and point position
+ * Reference: docs/patches/patch_03_Direction_Clustering.md
+ * Angle range: 0° to 180° (patch03: changed from -45° to +45°)
+ * Lines are grouped into clusters of similar directions
+ * 
+ * @param gamma Gamma axis value [-100, +100]
+ * @param seed Global seed for deterministic generation
+ * @param lineIndex Index of the line (0 to numLines-1)
+ * @param clusterCount Number of direction clusters (default: 3)
+ * @param clusterSpread Spread angle within each cluster in degrees (default: 30)
+ * @returns Direction angle in degrees [0, 180]
  */
 export function getLineDirection(
   gamma: number,
-  startX: number,
-  startY: number,
-  seed: string
+  seed: string,
+  lineIndex: number,
+  clusterCount: number = 3,
+  clusterSpread: number = 30
 ): number {
-  // Base angle: map gamma [-100, +100] to [-45°, +45°]
-  const normalized = (gamma - GAMMA_NORMALIZED_MIN) / GAMMA_NORMALIZED_RANGE; // [0, 1]
-  const baseAngle = DIRECTION_ANGLE_MIN + normalized * (DIRECTION_ANGLE_MAX - DIRECTION_ANGLE_MIN);
+  // Determine which cluster this line belongs to
+  const clusterIndex = Math.floor(seededRandom(`${seed}:cluster:${lineIndex}`) * clusterCount);
+  
+  // Central angle of the cluster (distributed evenly across 0-180°)
+  const clusterAngle = (clusterIndex / clusterCount) * 180;
+  
+  // Gamma rotates all clusters
+  const gammaRotation = (gamma / 100) * 180;
+  
+  // Variation within the cluster
+  const inClusterJitter = (seededRandom(`${seed}:jitter:${lineIndex}`) - 0.5) * clusterSpread;
+  
+  // Final angle: cluster angle + gamma rotation + jitter, clamped to [0, 180]
+  const finalAngle = (clusterAngle + gammaRotation + inClusterJitter) % 180;
+  
+  // Ensure angle is in [0, 180] range
+  return Math.max(0, Math.min(180, finalAngle));
+}
 
-  // Add small deterministic jitter based on position and seed
-  const rng = prng(`${seed}:direction:${startX}:${startY}`);
-  const jitter = (rng() - 0.5) * DIRECTION_JITTER_RANGE; // ±(DIRECTION_JITTER_RANGE/2) degrees
+/**
+ * Determines line direction with debug information (patch03)
+ * 
+ * Same as getLineDirection but also returns debug information for visualization.
+ * 
+ * @param gamma Gamma axis value [-100, +100]
+ * @param seed Global seed for deterministic generation
+ * @param lineIndex Index of the line (0 to numLines-1)
+ * @param clusterCount Number of direction clusters (default: 3)
+ * @param clusterSpread Spread angle within each cluster in degrees (default: 30)
+ * @returns Object with direction and debug information
+ */
+export function getLineDirectionWithDebug(
+  gamma: number,
+  seed: string,
+  lineIndex: number,
+  clusterCount: number = 3,
+  clusterSpread: number = 30
+): {
+  direction: number;
+  debug: {
+    clusterIndex: number;
+    clusterAngle: number;
+    gammaRotation: number;
+    finalClusterAngle: number;
+    inClusterJitter: number;
+    finalDirection: number;
+  };
+} {
+  // Determine which cluster this line belongs to
+  const clusterIndex = Math.floor(seededRandom(`${seed}:cluster:${lineIndex}`) * clusterCount);
+  
+  // Central angle of the cluster (distributed evenly across 0-180°)
+  const clusterAngle = (clusterIndex / clusterCount) * 180;
+  
+  // Gamma rotates all clusters
+  const gammaRotation = (gamma / 100) * 180;
+  
+  // Final cluster angle after Gamma rotation
+  const finalClusterAngle = (clusterAngle + gammaRotation) % 180;
+  
+  // Variation within the cluster
+  const inClusterJitter = (seededRandom(`${seed}:jitter:${lineIndex}`) - 0.5) * clusterSpread;
+  
+  // Final angle: cluster angle + gamma rotation + jitter, clamped to [0, 180]
+  const finalAngle = (clusterAngle + gammaRotation + inClusterJitter) % 180;
+  const finalDirection = Math.max(0, Math.min(180, finalAngle));
+  
+  return {
+    direction: finalDirection,
+    debug: {
+      clusterIndex,
+      clusterAngle,
+      gammaRotation,
+      finalClusterAngle,
+      inClusterJitter,
+      finalDirection,
+    },
+  };
+}
 
-  return baseAngle + jitter;
+/**
+ * Computes a per-line length profile multiplier for patch04.
+ *
+ * Uses a predefined set of length profiles and deterministic PRNG
+ * based on seed, pointIndex, lineIndex, clusterIndex and clusterCount.
+ *
+ * Example profiles (5-step, more varied, DRAMATIC):
+ * - 0.5  → very short
+ * - 0.8  → short
+ * - 1.0  → medium
+ * - 1.3  → long
+ * - 1.8  → very long
+ */
+function computeLengthProfileMultiplier(
+  seed: string,
+  pointIndex: number,
+  lineIndex: number,
+  clusterIndex: number,
+  clusterCount: number
+): number {
+  const lengthProfiles = [0.5, 0.8, 1.0, 1.3, 1.8];
+  const rngValue = seededRandom(
+    `${seed}:lenProfile:${pointIndex}:${lineIndex}:${clusterIndex}:${clusterCount}`
+  );
+  const rawIndex = Math.floor(rngValue * lengthProfiles.length);
+  const clampedIndex = Math.max(0, Math.min(lengthProfiles.length - 1, rawIndex));
+  return lengthProfiles[clampedIndex];
+}
+
+/**
+ * Computes a per-line curvature profile multiplier for patch04.
+ *
+ * Uses a predefined set of curvature profiles and deterministic PRNG
+ * based on seed, pointIndex, lineIndex, clusterIndex and clusterCount.
+ *
+ * Optionally applies an inverse correlation with the length profile:
+ * - Shorter lines (lengthProfile < 1) → slightly higher curvature
+ * - Longer lines (lengthProfile > 1)  → slightly lower curvature
+ */
+function computeCurvatureProfileMultiplier(
+  seed: string,
+  pointIndex: number,
+  lineIndex: number,
+  clusterIndex: number,
+  clusterCount: number,
+  lengthProfile?: number
+): number {
+  const curvatureProfiles = [0.4, 0.75, 1.0, 1.5, 2.0];
+  const rngValue = seededRandom(
+    `${seed}:curvProfile:${pointIndex}:${lineIndex}:${clusterIndex}:${clusterCount}`
+  );
+  const rawIndex = Math.floor(rngValue * curvatureProfiles.length);
+  const clampedIndex = Math.max(0, Math.min(curvatureProfiles.length - 1, rawIndex));
+  const baseProfile = curvatureProfiles[clampedIndex];
+
+  if (lengthProfile !== undefined) {
+    // Inverse correlation: shorter lines → slightly more curvature,
+    // longer lines → slightly less curvature.
+    const correlationFactor = 1.0 + (1.0 - lengthProfile) * 0.5;
+    return baseProfile * correlationFactor;
+  }
+
+  return baseProfile;
 }
 
 /**
@@ -148,7 +291,7 @@ export function getLineLength(
  * @param pointIndex Index of the keyword/point
  * @param canvasWidth Canvas width in pixels
  * @param canvasHeight Canvas height in pixels
- * @param dispersionRadius Fraction of canvas diagonal for dispersion radius (default: 0.08 = 8%)
+ * @param dispersionRadius Fraction of canvas diagonal for dispersion radius (default: 0.05 = 5%)
  * @returns A point deterministically dispersed around the base point
  */
 function generateDispersedStartPoint(
@@ -158,7 +301,7 @@ function generateDispersedStartPoint(
   pointIndex: number,
   canvasWidth: number,
   canvasHeight: number,
-  dispersionRadius: number = 0.08 // 8% of diagonal by default
+  dispersionRadius: number = 0.05 // 5% of diagonal by default
 ): Point {
   // Safety checks: if canvas dimensions are invalid, return base point
   if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
@@ -312,6 +455,8 @@ export function applyDeltaIrregularity(
  * 
  * @param lengthScale Optional multiplier for line length (default: 1.0)
  * @param curvatureScale Optional multiplier for curve intensity (default: 1.0)
+ * @param clusterCount Number of direction clusters (default: 3)
+ * @param clusterSpread Spread angle within each cluster in degrees (default: 30)
  */
 export function generateCurveFromPoint(
   start: Point,
@@ -323,15 +468,20 @@ export function generateCurveFromPoint(
   quadrant: Quadrant,
   isMirrored: boolean,
   lengthScale: number = 1.0,
-  curvatureScale: number = 1.0
-): Array<{
-  start: Point;
-  control: Point;
-  end: Point;
-  keyword: string;
-  quadrant: Quadrant;
-  isMirrored: boolean;
-}> {
+  curvatureScale: number = 1.0,
+  clusterCount: number = 3,
+  clusterSpread: number = 30
+): {
+  curves: Array<{
+    start: Point;
+    control: Point;
+    end: Point;
+    keyword: string;
+    quadrant: Quadrant;
+    isMirrored: boolean;
+  }>;
+  directionClusters: DirectionClusterDebug[];
+} {
   const numLines = getNumberOfLines(axes.gamma);
   const curves: Array<{
     start: Point;
@@ -341,31 +491,81 @@ export function generateCurveFromPoint(
     quadrant: Quadrant;
     isMirrored: boolean;
   }> = [];
+  const directionClusters: DirectionClusterDebug[] = [];
 
   for (let i = 0; i < numLines; i++) {
-    // Generate a deterministically dispersed start point for this line
-    // This creates variation: each line from the same keyword starts from a slightly different point
+    // MODIFIED BEHAVIOR (patch_02 refinement):
+    // - First line (i === 0): uses exact base point from Alfa/Beta (no dispersion)
+    // - Subsequent lines (i > 0): use dispersed points around base point (original patch_02 behavior)
+    // This maintains visual correspondence between anchor point and geometry
     // Reference: docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md
-    const dispersedStart = generateDispersedStartPoint(
-      start, // base point (from Alfa/Beta)
+    const dispersedStart = i === 0
+      ? start // First line: exact anchor point (no dispersion)
+      : generateDispersedStartPoint(
+          start, // base point (from Alfa/Beta)
+          seed,
+          i, // line index
+          pointIndex,
+          canvasWidth,
+          canvasHeight,
+          0.05 // 5% of diagonal dispersion radius
+        );
+
+    // Get direction for this line with clustering (patch03)
+    // Use getLineDirectionWithDebug to capture debug information
+    const { direction, debug: directionDebug } = getLineDirectionWithDebug(
+      axes.gamma,
       seed,
       i, // line index
+      clusterCount,
+      clusterSpread
+    );
+    const clusterIndex = directionDebug.clusterIndex;
+
+    // PATCH04: compute per-line length profile multiplier
+    const lengthProfile = computeLengthProfileMultiplier(
+      seed,
       pointIndex,
-      canvasWidth,
-      canvasHeight,
-      0.08 // 8% of diagonal dispersion radius
+      i, // lineIndex
+      clusterIndex,
+      clusterCount
     );
 
-    // Get direction and length for this line (using dispersed start point)
-    const direction = getLineDirection(axes.gamma, dispersedStart.x, dispersedStart.y, `${seed}:line:${i}`);
-    const length = getLineLength(axes.gamma, canvasWidth, canvasHeight, seed, pointIndex * 10 + i, lengthScale);
+    // Get base length (Gamma + Slider1) and apply length profile
+    const baseLength = getLineLength(
+      axes.gamma,
+      canvasWidth,
+      canvasHeight,
+      seed,
+      pointIndex * 10 + i,
+      lengthScale
+    );
+    const profiledLength = baseLength * lengthProfile;
+
+    // PATCH04: compute per-line curvature profile multiplier with inverse correlation
+    const curvatureProfile = computeCurvatureProfileMultiplier(
+      seed,
+      pointIndex,
+      i, // lineIndex
+      clusterIndex,
+      clusterCount,
+      lengthProfile
+    );
+    const profiledCurvatureScale = curvatureScale * curvatureProfile;
+
+    // Store debug information for this line, including profile multipliers
+    directionClusters.push({
+      ...directionDebug,
+      lengthProfile,
+      curvatureProfile,
+    });
 
     // Convert direction from degrees to radians
     const angleRad = (direction * Math.PI) / 180;
 
-    // Calculate end point (from dispersed start)
-    const endX = dispersedStart.x + Math.cos(angleRad) * length;
-    const endY = dispersedStart.y + Math.sin(angleRad) * length;
+    // Calculate end point (from dispersed start) using profiled length
+    const endX = dispersedStart.x + Math.cos(angleRad) * profiledLength;
+    const endY = dispersedStart.y + Math.sin(angleRad) * profiledLength;
     const end = clampToCanvas(endX, endY, canvasWidth, canvasHeight);
 
     // Base control point is at midpoint (between dispersed start and end)
@@ -374,16 +574,16 @@ export function generateCurveFromPoint(
       y: (dispersedStart.y + end.y) / 2,
     };
 
-    // Apply Delta irregularity to control point
+    // Apply Delta irregularity to control point using profiled length and curvature
     const control = applyDeltaIrregularity(
       axes.delta,
       dispersedStart, // Use dispersed start point
       end,
       baseControl,
-      length,
+      profiledLength,
       seed,
       pointIndex * 10 + i,
-      curvatureScale
+      profiledCurvatureScale
     );
 
     // Clamp control point to canvas
@@ -399,6 +599,8 @@ export function generateCurveFromPoint(
     });
   }
 
-  return curves;
+  return {
+    curves,
+    directionClusters,
+  };
 }
-

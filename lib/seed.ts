@@ -37,3 +37,13 @@ export function prng(seed: string) {
   return seedrandom(String(cyrb53(seed)));
 }
 
+/**
+ * Helper function that wraps prng to directly return a random number [0, 1)
+ * This is a convenience wrapper for cases where we need a single random value
+ * @param seed Stringa seed
+ * @returns Numero casuale deterministico [0, 1)
+ */
+export function seededRandom(seed: string): number {
+  return prng(seed)();
+}
+

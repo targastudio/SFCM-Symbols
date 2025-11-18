@@ -130,6 +130,23 @@ export type KeywordAnchorDebug = {
  * This is optional and does not affect engine behavior.
  * Reference: docs/debug/ENGINE_V2_DEBUG_OVERLAY.md
  */
+/**
+ * Direction clustering debug information (patch03)
+ * 
+ * Contains debug data for visualizing direction clustering behavior.
+ */
+export type DirectionClusterDebug = {
+  clusterIndex: number; // Index of the cluster (0-based)
+  clusterAngle: number; // Central angle of the cluster (before Gamma rotation) in degrees
+  gammaRotation: number; // Rotation applied by Gamma in degrees
+  finalClusterAngle: number; // Cluster angle after Gamma rotation in degrees
+  inClusterJitter: number; // Jitter applied within the cluster in degrees
+  finalDirection: number; // Final direction of the line (0-180°) in degrees
+  // patch04: optional per-line length/curvature profile multipliers
+  lengthProfile?: number;
+  curvatureProfile?: number;
+};
+
 export type EngineV2DebugInfo = {
   alfa: number;
   beta: number;
@@ -138,4 +155,9 @@ export type EngineV2DebugInfo = {
   bbox?: { minX: number; minY: number; maxX: number; maxY: number }; // Bounding box of pre-mirroring geometry
   mirrorAxisType?: "vertical" | "horizontal" | "diagonal"; // Type of mirroring axis
   mirrorAxisSegment?: { x1: number; y1: number; x2: number; y2: number }; // Axis line segment for visualization
+  // Direction clustering debug (patch03)
+  directionClusters?: DirectionClusterDebug[]; // Array of clustering info for each line
+  clusterCount?: number; // Number of clusters used
+  clusterSpread?: number; // Spread angle within clusters in degrees
+  gamma?: number; // Gamma value used for rotation
 };
