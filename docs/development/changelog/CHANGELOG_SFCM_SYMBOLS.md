@@ -6,6 +6,50 @@ Entries are listed in reverse chronological order (most recent first).
 
 ---
 
+## 2025-01-XX – PATCH02: Point Dispersion at Line Origin
+
+### PATCH02 – Point Dispersion
+
+**Deterministic dispersion of line origin points (visual enhancement)**
+
+- **Changed behavior**:
+  - **Old**: All lines from a keyword started from the exact same base point (Alfa/Beta position)
+  - **New**: Each line from a keyword starts from a slightly different point, deterministically dispersed around the base point
+
+- **Implementation**:
+  - New function: `generateDispersedStartPoint()` in `lib/engine_v2/curves.ts`
+  - Modifies `generateCurveFromPoint()` to generate a unique dispersed start point for each line
+  - Dispersion radius: 8% of canvas diagonal (default)
+  - Distribution: uniform in circle area (not uniform in radius)
+  - Deterministic: same seed + pointIndex + lineIndex → same dispersed point
+
+- **Visual impact**:
+  - **Before**: Star pattern with all lines radiating from one center point
+  - **After**: Organic cluster with lines starting from slightly different points
+  - Creates more varied, less mechanical appearance
+
+- **Technical details**:
+  - Uses existing `prng` function for deterministic randomness
+  - Seed format: `${seed}:disperse:${pointIndex}:${lineIndex}`
+  - Points are clamped to canvas bounds
+  - No performance impact (minimal overhead)
+
+- **Compatibility**:
+  - ✅ Non-breaking change (no API modifications)
+  - ✅ Determinism preserved (same input → same output)
+  - ✅ Works with all canvas sizes (dispersion scales with diagonal)
+  - ✅ Compatible with all existing features (sliders, mirroring, etc.)
+
+**Files affected:**
+- `lib/engine_v2/curves.ts` (new function + modified loop)
+
+**Documentation:**
+- `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (patch specification)
+- `docs/patches/PATCHES_INDEX.md` (updated with patch02 entry)
+- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated pipeline with dispersion step)
+
+---
+
 ## 2025-11-16 – ENGINE_V2 + Mirroring Patch01 + Slider1
 
 ### ENGINE_V2

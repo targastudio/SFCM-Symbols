@@ -1,6 +1,6 @@
 # ENGINE V2 — Overview
 
-Questo documento descrive la struttura completa dell'ENGINE V2, basato su 4 assi semantici, curve quadratiche, **mirroring finale della geometria** (patch01) e assenza totale di cluster.
+Questo documento descrive la struttura completa dell'ENGINE V2, basato su 4 assi semantici, curve quadratiche, **dispersione deterministica dei punti origine** (patch02), **mirroring finale della geometria** (patch01) e assenza totale di cluster.
 
 ## 1. Assi Semantici
 
@@ -31,7 +31,8 @@ Usato per:
 1. Partenza da keyword.  
 2. Conversione deterministica tramite dizionario/LLM → valori Alfa/Beta/Gamma/Delta.  
 3. **Posizione primaria** da Alfa/Beta (coordinate normalizzate → coordinate canvas).  
-4. **Generazione linee base** da Gamma + definizione della curvatura/irregolarità da Delta.  
-5. **Mirroring finale sulla geometria**: applicato sull’array di connections dopo Gamma/Delta, come post-processing deterministico (patch01_SPEC_03_mirroring_revision).  
-6. **Output finale**: elenco di curve quadratiche con arrowhead fisse.  
-7. Consegna a preview/export senza modificare pipeline attuale (React/SVG, animazione, export restano invariati).
+4. **Dispersione punti origine** (patch02): ogni linea ottiene un punto di origine unico, disperso deterministicamente attorno al punto base (8% della diagonale del canvas).  
+5. **Generazione linee base** da Gamma + definizione della curvatura/irregolarità da Delta.  
+6. **Mirroring finale sulla geometria**: applicato sull'array di connections dopo Gamma/Delta, come post-processing deterministico (patch01_SPEC_03_mirroring_revision).  
+7. **Output finale**: elenco di curve quadratiche con arrowhead fisse.  
+8. Consegna a preview/export senza modificare pipeline attuale (React/SVG, animazione, export restano invariati).

@@ -24,3 +24,20 @@ Indice delle patch applicate all'ENGINE_V2 all’interno del progetto **SFCM SYM
 - `patch01_SPEC_03_mirroring_revision.md` (dettaglio spec della patch).  
 - `patch01_tasks.md` (lista task esecutivi per Cursor).
 
+---
+
+## patch02 — Dispersione punti origine linee
+
+- **ID:** patch_02_Point_Dispersion_at_Line_Origin  
+- **Data:** 2025-01-XX  
+- **Scope:** miglioramento visivo della generazione geometrica.  
+- **Tipo:** Non-breaking, feature enhancement (miglioramento visivo).  
+- **Implementazione:** `lib/engine_v2/curves.ts` (funzione `generateDispersedStartPoint` e modifica a `generateCurveFromPoint`).  
+- **Contractor:** Cursor AI agent.  
+
+### Documenti correlati
+
+- `patch_02_Point_Dispersion_at_Line_Origin.md` (dettaglio spec della patch).  
+- `ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con dispersione punti).  
+- `CHANGELOG_SFCM_SYMBOLS.md` (entry patch02).
+

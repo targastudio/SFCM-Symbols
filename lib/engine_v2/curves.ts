@@ -135,6 +135,106 @@ export function getLineLength(
 }
 
 /**
+ * Generates a deterministically dispersed start point around a base point
+ * 
+ * Reference: docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md
+ * 
+ * Creates a point randomly distributed in a circle around the base point.
+ * The distribution is uniform in circle area (not uniform in radius).
+ * 
+ * @param basePoint The base point (from Alfa/Beta axes)
+ * @param seed Global seed for deterministic generation
+ * @param lineIndex Index of the line (0 to numLines-1)
+ * @param pointIndex Index of the keyword/point
+ * @param canvasWidth Canvas width in pixels
+ * @param canvasHeight Canvas height in pixels
+ * @param dispersionRadius Fraction of canvas diagonal for dispersion radius (default: 0.08 = 8%)
+ * @returns A point deterministically dispersed around the base point
+ */
+function generateDispersedStartPoint(
+  basePoint: Point,
+  seed: string,
+  lineIndex: number,
+  pointIndex: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  dispersionRadius: number = 0.08 // 8% of diagonal by default
+): Point {
+  // Safety checks: if canvas dimensions are invalid, return base point
+  if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
+    return basePoint;
+  }
+  
+  // Safety check: if basePoint is invalid, return it as-is
+  if (!isFinite(basePoint.x) || !isFinite(basePoint.y)) {
+    return basePoint;
+  }
+  
+  // Safety check: if seed is invalid, return base point
+  if (!seed || typeof seed !== 'string') {
+    return basePoint;
+  }
+  
+  // Safety check: if indices are invalid, return base point
+  if (!isFinite(lineIndex) || !isFinite(pointIndex)) {
+    return basePoint;
+  }
+  
+  // Calculate canvas diagonal
+  const diagonal = Math.sqrt(canvasWidth * canvasWidth + canvasHeight * canvasHeight);
+  
+  // Safety check: if diagonal is invalid, return base point
+  if (!isFinite(diagonal) || diagonal <= 0) {
+    return basePoint;
+  }
+  
+  // Calculate dispersion radius in pixels
+  const radius = diagonal * dispersionRadius;
+  
+  // Safety check: if radius is too small or invalid, return base point
+  if (!isFinite(radius) || radius <= 0) {
+    return basePoint;
+  }
+  
+  // Generate deterministic PRNG for this specific line
+  try {
+    const rng = prng(`${seed}:disperse:${pointIndex}:${lineIndex}`);
+  
+    // Generate random angle (0 to 2π)
+    const rngValue1 = rng();
+    if (!isFinite(rngValue1) || rngValue1 < 0 || rngValue1 > 1) {
+      return basePoint; // Safety fallback
+    }
+    const angle = rngValue1 * 2 * Math.PI;
+    
+    // Generate random distance (uniform in circle area)
+    // Using Math.sqrt(rng()) ensures uniform distribution in circle area
+    // (not uniform in radius, which would cluster points near center)
+    const rngValue2 = rng();
+    if (!isFinite(rngValue2) || rngValue2 < 0 || rngValue2 > 1) {
+      return basePoint; // Safety fallback
+    }
+    const distance = Math.sqrt(rngValue2) * radius;
+    
+    // Calculate dispersed point
+    const x = basePoint.x + Math.cos(angle) * distance;
+    const y = basePoint.y + Math.sin(angle) * distance;
+    
+    // Safety check: ensure calculated values are finite
+    if (!isFinite(x) || !isFinite(y)) {
+      return basePoint;
+    }
+    
+    // Clamp to canvas bounds
+    return clampToCanvas(x, y, canvasWidth, canvasHeight);
+  } catch (error) {
+    // If PRNG generation fails, return base point silently
+    // This ensures the app continues to work even if dispersion fails
+    return basePoint;
+  }
+}
+
+/**
  * Applies Delta-based irregularity (curvature and jitter) to curve control point
  * 
  * Reference: docs/ENGINE_V2_GEOMETRY_PIPELINE.md section 4
@@ -243,28 +343,41 @@ export function generateCurveFromPoint(
   }> = [];
 
   for (let i = 0; i < numLines; i++) {
-    // Get direction and length for this line
-    const direction = getLineDirection(axes.gamma, start.x, start.y, `${seed}:line:${i}`);
+    // Generate a deterministically dispersed start point for this line
+    // This creates variation: each line from the same keyword starts from a slightly different point
+    // Reference: docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md
+    const dispersedStart = generateDispersedStartPoint(
+      start, // base point (from Alfa/Beta)
+      seed,
+      i, // line index
+      pointIndex,
+      canvasWidth,
+      canvasHeight,
+      0.08 // 8% of diagonal dispersion radius
+    );
+
+    // Get direction and length for this line (using dispersed start point)
+    const direction = getLineDirection(axes.gamma, dispersedStart.x, dispersedStart.y, `${seed}:line:${i}`);
     const length = getLineLength(axes.gamma, canvasWidth, canvasHeight, seed, pointIndex * 10 + i, lengthScale);
 
     // Convert direction from degrees to radians
     const angleRad = (direction * Math.PI) / 180;
 
-    // Calculate end point
-    const endX = start.x + Math.cos(angleRad) * length;
-    const endY = start.y + Math.sin(angleRad) * length;
+    // Calculate end point (from dispersed start)
+    const endX = dispersedStart.x + Math.cos(angleRad) * length;
+    const endY = dispersedStart.y + Math.sin(angleRad) * length;
     const end = clampToCanvas(endX, endY, canvasWidth, canvasHeight);
 
-    // Base control point is at midpoint
+    // Base control point is at midpoint (between dispersed start and end)
     const baseControl: Point = {
-      x: (start.x + end.x) / 2,
-      y: (start.y + end.y) / 2,
+      x: (dispersedStart.x + end.x) / 2,
+      y: (dispersedStart.y + end.y) / 2,
     };
 
     // Apply Delta irregularity to control point
     const control = applyDeltaIrregularity(
       axes.delta,
-      start,
+      dispersedStart, // Use dispersed start point
       end,
       baseControl,
       length,
@@ -277,7 +390,7 @@ export function generateCurveFromPoint(
     const clampedControl = clampToCanvas(control.x, control.y, canvasWidth, canvasHeight);
 
     curves.push({
-      start,
+      start: dispersedStart, // Use dispersed start point
       control: clampedControl,
       end,
       keyword: "", // Will be set by caller

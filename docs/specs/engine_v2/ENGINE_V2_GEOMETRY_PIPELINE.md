@@ -2,7 +2,9 @@
 
 Pipeline completa per la generazione geometrica dei simboli SFCM.
 
-Questa versione incorpora **patch01_SPEC_03_mirroring_revision**: il mirroring viene applicato **sulla geometria finale**, come ultimo step prima del rendering.
+Questa versione incorpora:
+- **patch01_SPEC_03_mirroring_revision**: il mirroring viene applicato **sulla geometria finale**, come ultimo step prima del rendering.
+- **patch_02_Point_Dispersion_at_Line_Origin**: dispersione deterministica dei punti di origine delle linee per creare un effetto visivo più organico.
 
 ## 1. Keyword → Assi
 
@@ -26,9 +28,27 @@ const xPx = xNorm * canvasWidth;
 const yPx = yNorm * canvasHeight;
 ```
 
-Questa coppia definisce il **punto di ancoraggio** del sistema di linee.
+Questa coppia definisce il **punto di ancoraggio base** del sistema di linee.
 
-## 3. Generazione linee base (Gamma)
+**Nota (patch02)**: Ogni linea generata da una keyword parte da un punto leggermente diverso, disperso deterministicamente attorno al punto di ancoraggio base. Questo crea un effetto visivo più organico rispetto al pattern "a stella" dove tutte le linee partono dallo stesso punto.
+
+## 3. Dispersione punti origine (patch02)
+
+Prima di generare le linee, ogni punto di origine viene disperso deterministicamente attorno al punto di ancoraggio base:
+
+- **Raggio di dispersione**: 8% della diagonale del canvas (default)
+- **Distribuzione**: uniforme nell'area del cerchio (non uniforme nel raggio)
+- **Determinismo**: stesso seed + stesso pointIndex + stesso lineIndex → stesso punto disperso
+- **Formula**: 
+  - `diagonal = sqrt(canvasWidth² + canvasHeight²)`
+  - `radius = diagonal * 0.08`
+  - `angle = rng() * 2π` (PRNG deterministico)
+  - `distance = sqrt(rng()) * radius` (uniforme in area cerchio)
+  - `dispersedPoint = basePoint + (cos(angle), sin(angle)) * distance`
+
+Ogni linea (1-7 per keyword) ottiene un punto di origine unico, creando un cluster organico invece di un pattern radiale.
+
+## 4. Generazione linee base (Gamma)
 
 Gamma controlla la struttura di base:
 
@@ -58,7 +78,7 @@ type ConnectionBase = {
 
 Le coordinate sono espresse nello spazio canvas normalizzato.
 
-## 4. Irregolarità e curvatura (Delta)
+## 5. Irregolarità e curvatura (Delta)
 
 Delta controlla la curvatura delle linee in modo deterministico:
 
@@ -81,7 +101,7 @@ type Connection = {
 };
 ```
 
-## 5. Mirroring finale della geometria (patch01)
+## 6. Mirroring finale della geometria (patch01)
 
 Questo step implementa la patch di mirroring.
 
@@ -105,7 +125,7 @@ Questo step implementa la patch di mirroring.
   - **deterministico** (stesso seed → stesso output)  
   - completamente interno all’ENGINE_V2.
 
-## 6. Output finale
+## 7. Output finale
 
 La pipeline produce un array di curve quadratiche:
 
