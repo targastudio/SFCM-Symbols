@@ -144,6 +144,7 @@ export function getLineLength(
  * - Delta ≈ 0 → almost straight lines (curvature ~5% of length)
  * - |Delta| large → clearly curved lines (curvature ~30% of length)
  * - Uses perpendicular offset from midpoint with deterministic jitter
+ * - curvatureScale multiplies the final offset magnitude (0.3-1.7 range)
  */
 export function applyDeltaIrregularity(
   delta: number,
@@ -152,7 +153,8 @@ export function applyDeltaIrregularity(
   baseControl: Point,
   lineLength: number,
   seed: string,
-  pointIndex: number
+  pointIndex: number,
+  curvatureScale: number = 1.0
 ): Point {
   // Calculate line segment vector and length
   const dx = end.x - start.x;
@@ -182,7 +184,8 @@ export function applyDeltaIrregularity(
   const curvFrac = baseCurvFrac * (1 + jitter);
 
   // Calculate offset magnitude
-  const offsetMag = curvFrac * len;
+  // Apply curvatureScale multiplier to curve intensity
+  const offsetMag = curvFrac * len * curvatureScale;
 
   // Determine direction: use sign of delta, with optional jitter-based variation
   // Use a separate RNG for direction to keep it deterministic but independent
@@ -208,6 +211,7 @@ export function applyDeltaIrregularity(
  * Uses Delta for curvature/jitter
  * 
  * @param lengthScale Optional multiplier for line length (default: 1.0)
+ * @param curvatureScale Optional multiplier for curve intensity (default: 1.0)
  */
 export function generateCurveFromPoint(
   start: Point,
@@ -218,7 +222,8 @@ export function generateCurveFromPoint(
   pointIndex: number,
   quadrant: Quadrant,
   isMirrored: boolean,
-  lengthScale: number = 1.0
+  lengthScale: number = 1.0,
+  curvatureScale: number = 1.0
 ): Array<{
   start: Point;
   control: Point;
@@ -264,7 +269,8 @@ export function generateCurveFromPoint(
       baseControl,
       length,
       seed,
-      pointIndex * 10 + i
+      pointIndex * 10 + i,
+      curvatureScale
     );
 
     // Clamp control point to canvas

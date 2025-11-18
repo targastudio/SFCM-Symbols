@@ -23,9 +23,10 @@ export default function Home() {
   // Slider state variables
   // Slider1: "Lunghezza linee" - controls lengthScale in ENGINE_V2 (0-100, default 50)
   const [lineLengthSlider, setLineLengthSlider] = useState(50);
+  // Slider2: "Curvatura linee" - controls curvatureScale in ENGINE_V2 (0-100, default 50)
+  const [curvatureSlider, setCurvatureSlider] = useState(50);
   // Placeholder sliders (ENGINE_V2 placeholders - no effect on generation yet)
   // NOTE: These sliders are kept in the UI for future mapping according to ENGINE_V2_SLIDER_MAPPING.md.
-  const [ramificazione, setRamificazione] = useState(0.5);
   const [complessita, setComplessita] = useState(0.5);
   const [mutamento, setMutamento] = useState(0.5);
   const [connections, setConnections] = useState<BranchedConnection[]>([]);
@@ -183,7 +184,7 @@ export default function Home() {
       );
 
       // Generate seed (based on keywords and canvas size only)
-      // NOTE: Only lineLengthSlider influences generation via lengthScale
+      // NOTE: Sliders (lengthScale, curvatureScale) do not affect seed - they modify geometry post-generation
       const seed = generateSeed(keywordsList, canvasWidth, canvasHeight);
 
       // Map Slider1 (0-100) to lengthScale (0.7-1.3)
@@ -194,6 +195,13 @@ export default function Home() {
       const s = lineLengthSlider; // 0..100
       const lengthScale = 0.7 + (s / 100) * (1.3 - 0.7);
 
+      // Map Slider2 "Curvatura linee" (0-100) to curvatureScale (0.3-1.7)
+      // Formula: curvatureScale = 0.3 + (slider / 100) * (1.7 - 0.3)
+      // s = 0   → curvatureScale = 0.3   (curve meno marcate)
+      // s = 50  → curvatureScale = 1.0   (baseline)
+      // s = 100 → curvatureScale = 1.7   (curve molto marcate)
+      const curvatureScale = 0.3 + (curvatureSlider / 100) * (1.7 - 0.3);
+
       // ENGINE_V2: Generate connections using the new 4-axis engine
       // includeDebug: only capture debug info when debugMode is enabled
       const result = await generateEngineV2(
@@ -202,7 +210,7 @@ export default function Home() {
         canvasWidth,
         canvasHeight,
         debugMode,
-        { lengthScale }
+        { lengthScale, curvatureScale }
       );
 
       // CRITICAL: Reset animation state BEFORE setting new connections
@@ -327,24 +335,25 @@ export default function Home() {
               />
             </div>
 
-            {/* Placeholder sliders (ENGINE_V2 placeholders - no effect on generation yet) */}
-            {/* These sliders are kept in the UI for future mapping according to ENGINE_V2_SLIDER_MAPPING.md. */}
-
+            {/* Slider2: Curvatura linee - controls curvatureScale in ENGINE_V2 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <label htmlFor="ramificazione" style={{ fontSize: "1rem" }}>
-                Ramificazione: {ramificazione.toFixed(2)}
+              <label htmlFor="curvature" style={{ fontSize: "1rem" }}>
+                Curvatura linee: {curvatureSlider}
               </label>
               <input
-                id="ramificazione"
+                id="curvature"
                 type="range"
                 min="0"
-                max="1"
-                step="0.01"
-                value={ramificazione}
-                onChange={(e) => setRamificazione(parseFloat(e.target.value))}
+                max="100"
+                step="1"
+                value={curvatureSlider}
+                onChange={(e) => setCurvatureSlider(parseInt(e.target.value, 10))}
                 style={{ width: "100%" }}
               />
             </div>
+
+            {/* Placeholder sliders (ENGINE_V2 placeholders - no effect on generation yet) */}
+            {/* These sliders are kept in the UI for future mapping according to ENGINE_V2_SLIDER_MAPPING.md. */}
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <label htmlFor="complessita" style={{ fontSize: "1rem" }}>

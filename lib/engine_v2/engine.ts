@@ -33,6 +33,7 @@ import { applyFinalMirroring, computeMirroringDebugInfo } from "./finalMirroring
  */
 export type EngineV2Options = {
   lengthScale?: number; // Multiplier for line length (default: 1.0)
+  curvatureScale?: number; // Multiplier for curve intensity (default: 1.0)
 };
 
 /**
@@ -123,6 +124,7 @@ export async function generateEngineV2(
 ): Promise<EngineV2Result> {
   // Normalize options with defaults
   const lengthScale = options.lengthScale ?? 1.0;
+  const curvatureScale = options.curvatureScale ?? 1.0;
   if (keywords.length === 0) {
     return { connections: [] };
   }
@@ -194,7 +196,8 @@ export async function generateEngineV2(
       i,
       point.quadrant,
       false, // isMirrored: always false now (mirroring happens at final step)
-      lengthScale // Applied to ALL curves, including those from unknown keywords
+      lengthScale, // Applied to ALL curves, including those from unknown keywords
+      curvatureScale // Applied to ALL curves, including those from unknown keywords
     );
 
     // Set keyword for each curve
