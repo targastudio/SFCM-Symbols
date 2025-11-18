@@ -19,29 +19,17 @@ import type { AxesV2, Point, Quadrant, DirectionClusterDebug } from "../types";
 import { prng, seededRandom } from "../seed";
 
 // Constants from ENGINE_V2_GEOMETRY_PIPELINE.md section 5
-const GAMMA_NORMALIZED_MIN = -100; // Gamma range minimum
-const GAMMA_NORMALIZED_MAX = 100; // Gamma range maximum
-const GAMMA_NORMALIZED_RANGE = 200; // Gamma range span (max - min)
 const NUM_LINES_MIN = 1; // Minimum number of lines per point
 const NUM_LINES_MAX = 7; // Maximum number of lines per point
 // Direction clustering constants (patch03)
-const DIRECTION_ANGLE_MIN = 0; // Minimum direction angle in degrees (patch03: changed from -45)
-const DIRECTION_ANGLE_MAX = 180; // Maximum direction angle in degrees (patch03: changed from 45)
 const LINE_LENGTH_MIN_FRAC = 0.15; // 15% of canvas diagonal
 const LINE_LENGTH_MAX_FRAC = 0.50; // 50% of canvas diagonal
-const DIRECTION_JITTER_RANGE = 10; // ±5 degrees jitter
 
 // Constants from ENGINE_V2_GEOMETRY_PIPELINE.md section 4
 const DELTA_CURVATURE_MIN_FRAC = 0.05; // 5% of line length (minimum curvature)
 const DELTA_CURVATURE_MAX_FRAC = 0.30; // 30% of line length (maximum curvature)
 const DELTA_CURVATURE_JITTER_RANGE = 0.2; // ±20% jitter on curvature magnitude
 
-/**
- * Clamps a value to [0, 1] range
- */
-function clamp01(v: number): number {
-  return Math.max(0, Math.min(1, v));
-}
 
 /**
  * Clamps a point to stay within exact canvas bounds
@@ -291,7 +279,7 @@ export function getLineLength(
  * @param pointIndex Index of the keyword/point
  * @param canvasWidth Canvas width in pixels
  * @param canvasHeight Canvas height in pixels
- * @param dispersionRadius Fraction of canvas diagonal for dispersion radius (default: 0.05 = 5%)
+ * @param dispersionRadius Fraction of canvas diagonal for dispersion radius (default: 0.02 = 2%)
  * @returns A point deterministically dispersed around the base point
  */
 function generateDispersedStartPoint(
@@ -301,7 +289,7 @@ function generateDispersedStartPoint(
   pointIndex: number,
   canvasWidth: number,
   canvasHeight: number,
-  dispersionRadius: number = 0.05 // 5% of diagonal by default
+  dispersionRadius: number = 0.02 // 2% of diagonal by default
 ): Point {
   // Safety checks: if canvas dimensions are invalid, return base point
   if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
@@ -370,7 +358,7 @@ function generateDispersedStartPoint(
     
     // Clamp to canvas bounds
     return clampToCanvas(x, y, canvasWidth, canvasHeight);
-  } catch (error) {
+  } catch {
     // If PRNG generation fails, return base point silently
     // This ensures the app continues to work even if dispersion fails
     return basePoint;
@@ -508,7 +496,7 @@ export function generateCurveFromPoint(
           pointIndex,
           canvasWidth,
           canvasHeight,
-          0.05 // 5% of diagonal dispersion radius
+          0.02 // 2% of diagonal dispersion radius
         );
 
     // Get direction for this line with clustering (patch03)

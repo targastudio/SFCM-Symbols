@@ -42,12 +42,12 @@ Prima di generare le linee, i punti di origine sono gestiti come segue:
   - Mantiene la connessione semantica tra assi e geometria
 
 - **Linee successive (index > 0)**: punti dispersi deterministicamente attorno al punto base
-  - **Raggio di dispersione**: 5% della diagonale del canvas (default, configurabile 3–10%)
+  - **Raggio di dispersione**: 2% della diagonale del canvas (default, configurabile 1–4%)
   - **Distribuzione**: uniforme nell'area del cerchio (non uniforme nel raggio)
   - **Determinismo**: stesso seed + stesso pointIndex + stesso lineIndex → stesso punto disperso
   - **Formula**: 
     - `diagonal = sqrt(canvasWidth² + canvasHeight²)`
-    - `radius = diagonal * 0.05`
+    - `radius = diagonal * 0.02`
     - `angle = rng() * 2π` (PRNG deterministico)
     - `distance = sqrt(rng()) * radius` (uniforme in area cerchio)
     - `dispersedPoint = basePoint + (cos(angle), sin(angle)) * distance`

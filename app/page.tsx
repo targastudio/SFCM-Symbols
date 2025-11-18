@@ -18,7 +18,7 @@ import {
 } from "../lib/canvasSizeConfig";
 
 export default function Home() {
-  const [keywords, setKeywords] = useState("ordine, caos, conflitto, consenso");
+  const [keywords, setKeywords] = useState("Azione, Dispositivo, reale, ibrido, politica");
   
   // Slider state variables
   // Slider1: "Lunghezza linee" - controls lengthScale in ENGINE_V2 (0-100, default 50)

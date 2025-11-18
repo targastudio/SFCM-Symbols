@@ -78,7 +78,6 @@ export default function DebugOverlay({
   const CLUSTER_CENTER_OPACITY = 0.7;
   const CLUSTER_CENTER_WIDTH = 2;
   const CLUSTER_CENTER_LENGTH = 50; // Length of cluster center indicator line
-  const DIRECTION_LINE_COLOR = "#8888ff"; // Light blue (base color)
   const DIRECTION_LINE_OPACITY_BASE = 0.25;
   const DIRECTION_LINE_OPACITY_MAX = 1.0;
   const DIRECTION_LINE_WIDTH_BASE = 0.6;
@@ -86,7 +85,6 @@ export default function DebugOverlay({
   const DIRECTION_LINE_LENGTH = 30; // Length of direction indicator line
   const GAMMA_ROTATION_COLOR = "#ff8800"; // Orange
   const GAMMA_ROTATION_OPACITY = 0.6;
-  const GAMMA_ROTATION_WIDTH = 1.5;
   
   // Helper function to convert angle (degrees) to point on circle
   const angleToPoint = (angleDeg: number, centerX: number, centerY: number, radius: number): Point => {

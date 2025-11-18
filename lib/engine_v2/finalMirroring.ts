@@ -22,12 +22,6 @@
 import type { BranchedConnection, Point } from "../types";
 import { computeCurveControl } from "../svgUtils";
 
-/**
- * Clamps a value to [0, 1] range
- */
-function clamp01(v: number): number {
-  return Math.max(0, Math.min(1, v));
-}
 
 /**
  * Computes bounding box from all points in connections
@@ -84,8 +78,7 @@ function computeBoundingBox(
  * Returns axis type: 'vertical' | 'horizontal' | 'diagonal'
  */
 function determineAxis(
-  bbox: { minX: number; minY: number; maxX: number; maxY: number },
-  _seed: string // Reserved for future deterministic axis selection variations
+  bbox: { minX: number; minY: number; maxX: number; maxY: number }
 ): 'vertical' | 'horizontal' | 'diagonal' {
   const width = bbox.maxX - bbox.minX;
   const height = bbox.maxY - bbox.minY;
@@ -212,7 +205,8 @@ export function computeMirroringDebugInfo(
   connections: BranchedConnection[],
   canvasWidth: number,
   canvasHeight: number,
-  seed: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _seed: string
 ): {
   bbox: { minX: number; minY: number; maxX: number; maxY: number };
   mirrorAxisType: "vertical" | "horizontal" | "diagonal";
@@ -229,7 +223,7 @@ export function computeMirroringDebugInfo(
   }
 
   // Step 2: Determine symmetry axis (bbox is used ONLY for orientation decision)
-  const axisType = determineAxis(bbox, seed);
+  const axisType = determineAxis(bbox);
   
   // Calculate canvas center (axis position is always based on canvas, not bbox)
   const canvasCenterX = canvasWidth / 2;
@@ -288,7 +282,8 @@ export function applyFinalMirroring(
   connections: BranchedConnection[],
   canvasWidth: number,
   canvasHeight: number,
-  seed: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _seed: string
 ): BranchedConnection[] {
   if (connections.length === 0) {
     return [];
@@ -301,7 +296,7 @@ export function applyFinalMirroring(
   }
 
   // Step 2: Determine symmetry axis (bbox is used ONLY for orientation decision)
-  const axisType = determineAxis(bbox, seed);
+  const axisType = determineAxis(bbox);
   
   // Calculate canvas center (axis position is always based on canvas, not bbox)
   const canvasCenterX = canvasWidth / 2;

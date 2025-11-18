@@ -68,7 +68,7 @@ function generateDispersedStartPoint(
   pointIndex: number,
   canvasWidth: number,
   canvasHeight: number,
-  dispersionRadius: number = 0.05 // 5% of diagonal by default
+  dispersionRadius: number = 0.02 // 2% of diagonal by default
 ): Point
 ```
 
@@ -114,7 +114,7 @@ for (let i = 0; i < numLines; i++) {
     pointIndex,
     canvasWidth,
     canvasHeight,
-    0.05 // 5% of diagonal
+    0.02 // 2% of diagonal
   );
   const direction = getLineDirection(axes.gamma, dispersedStart.x, dispersedStart.y, `${seed}:line:${i}`);
   // ... rest of curve generation using dispersedStart
@@ -127,13 +127,13 @@ for (let i = 0; i < numLines; i++) {
 
 ## 4.1 Dispersion Radius
 
-**Default:** 5% of canvas diagonal  
-**Range:** 3-10% of canvas diagonal (configurable)  
+**Default:** 2% of canvas diagonal  
+**Range:** 1-4% of canvas diagonal (configurable)  
 **Effect:**
-- 3%: Minimal dispersion, nearly unified starting point
-- 5%: Subtle dispersion (default) that keeps lines visually clustered
-- 8%: Moderate dispersion for added variation
-- 10%: Noticeable dispersion, more organic feel
+- 1%: Near-overlapping origins, almost identical start positions
+- 2%: Subtle dispersion (default) for readable yet cohesive clusters
+- 3%: Noticeable micro-variation without breaking the anchor
+- 4%: Maximum recommended spread before clusters feel detached
 
 **Future consideration:** Could be exposed as a slider parameter (Slider3 or Slider4)
 
@@ -261,40 +261,34 @@ const dispersedStart = i === 0
 
 ---
 
-# 11. Refinement — Dispersion Radius Tuning (2025-01-XX)
+# 11. Refinement — Dispersion Radius Tuning (2025-01-XX → 2025-01-XX)
 
 ### Modified Behavior
 
-- Default dispersion radius reduced from **8%** to **5%** of the canvas diagonal.
-- Recommended adjustable range tightened to **3–10%** to avoid over-dispersed clusters.
+- Default dispersion radius further reduced from **5%** to **2%** of the canvas diagonal (original release used 8%).
+- Recommended adjustable range tightened to **1–4%** to keep the dispersed cluster extremely close to the Alfa/Beta anchor.
 
 ### Rationale
 
-- Previous 8% default produced points that were visually too distant from each other, weakening the connection to the anchor point.
-- A 5% default keeps the cluster tighter and more legible while still delivering organic variation.
-- Updated range guidance reflects the sweet spot discovered during QA: 3% for minimal variation, 10% for maximum spread without breaking composition.
+- Even with the earlier 5% setting, individual origins still felt too far apart, creating detached-looking clusters.
+- 2% keeps every origin visibly tied to the semantic anchor while still allowing micro-variations that separate overlapping lines.
+- Updated range guidance captures the practical window where dispersion is still noticeable without visually breaking the main point.
 
 ### Implementation
 
-- `generateDispersedStartPoint` default parameter changed to `0.05`.
-- `generateCurveFromPoint` now passes `0.05` when generating dispersed origins for lines with `index > 0`.
+- `generateDispersedStartPoint` default parameter updated to `0.02`.
+- `generateCurveFromPoint` now passes `0.02` for dispersed lines (`lineIndex > 0`).
 
 ### Documentation
 
-- Updated all spec references (pipeline + overview) to mention 5% default and new range.
-- Expanded configuration notes in section 4 with new default/range descriptions.
+- Specs (pipeline + overview) and this patch doc now describe the 2% default with the 1–4% recommended range.
+- Changelog updated with a new entry describing the additional refinement.
 
 ### Compatibility
 
 - ✅ Determinism preserved (same seed + indexes → same dispersed point).
-- ✅ Fully compatible with existing refinements (first line uses anchor point).
-- ✅ No API surface changes.
-
-- ✅ Determinism preserved (same input → same output)
-
-- ✅ Works with all canvas sizes and features
-
-- ✅ Compatible with debug overlay and mirroring
+- ✅ Fully compatible with previous refinements (first line uses anchor point).
+- ✅ No API surface changes; behavior is purely visual.
 
 ---
 

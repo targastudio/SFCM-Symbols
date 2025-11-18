@@ -29,7 +29,7 @@
  * IMPORTANT: Old behavior - Mirroring occurred BEFORE Gamma/Delta transformations (deprecated).
  */
 
-import type { Point, Quadrant } from "../types";
+import type { Quadrant } from "../types";
 
 /**
  * Clamps a value to [0, 1] range

@@ -39,27 +39,37 @@ export function normalizeKeywordV2(raw: string): string {
  * - Clamps values to [-100, +100] range
  * - Returns null if validation fails
  * 
- * @param raw Raw data from JSON (any type)
+ * @param raw Raw data from JSON (unknown type)
  * @returns Sanitized AxesV2 or null if invalid
  */
-export function sanitizeAxesV2(raw: any): AxesV2 | null {
+export function sanitizeAxesV2(raw: unknown): AxesV2 | null {
+  // Type guard: check if raw is an object with the expected structure
   if (
     typeof raw !== "object" ||
-    raw === null ||
-    typeof raw.alfa !== "number" ||
-    typeof raw.beta !== "number" ||
-    typeof raw.gamma !== "number" ||
-    typeof raw.delta !== "number"
+    raw === null
+  ) {
+    return null;
+  }
+
+  // Now TypeScript knows raw is an object, but we need to check properties
+  // Use type assertion after validation
+  const obj = raw as Record<string, unknown>;
+
+  if (
+    typeof obj.alfa !== "number" ||
+    typeof obj.beta !== "number" ||
+    typeof obj.gamma !== "number" ||
+    typeof obj.delta !== "number"
   ) {
     return null;
   }
 
   // Check for NaN or Infinity
   if (
-    !Number.isFinite(raw.alfa) ||
-    !Number.isFinite(raw.beta) ||
-    !Number.isFinite(raw.gamma) ||
-    !Number.isFinite(raw.delta)
+    !Number.isFinite(obj.alfa) ||
+    !Number.isFinite(obj.beta) ||
+    !Number.isFinite(obj.gamma) ||
+    !Number.isFinite(obj.delta)
   ) {
     return null;
   }
@@ -67,10 +77,10 @@ export function sanitizeAxesV2(raw: any): AxesV2 | null {
   const clamp = (v: number) => Math.max(-100, Math.min(100, v));
 
   return {
-    alfa: clamp(raw.alfa),
-    beta: clamp(raw.beta),
-    gamma: clamp(raw.gamma),
-    delta: clamp(raw.delta),
+    alfa: clamp(obj.alfa),
+    beta: clamp(obj.beta),
+    gamma: clamp(obj.gamma),
+    delta: clamp(obj.delta),
   };
 }
 

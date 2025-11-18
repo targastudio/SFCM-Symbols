@@ -140,8 +140,8 @@ Entries are listed in reverse chronological order (most recent first).
 - **Implementation**:
   - New function: `generateDispersedStartPoint()` in `lib/engine_v2/curves.ts`
   - Modifies `generateCurveFromPoint()` to generate a unique dispersed start point for each line
-  - Dispersion radius: 5% of canvas diagonal (default, adjustable constant)
-  - Recommended range: 3–10% to keep clusters cohesive without losing variation
+  - Dispersion radius: 2% of canvas diagonal (default, adjustable constant)
+  - Recommended range: 1–4% to keep clusters micro-dispersed while readable
   - Distribution: uniform in circle area (not uniform in radius)
   - Deterministic: same seed + pointIndex + lineIndex → same dispersed point
 
@@ -210,7 +210,7 @@ Entries are listed in reverse chronological order (most recent first).
 
 - `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (section 3 updated)
 
-### patch02 Dispersion Radius Tuning (2025-01-XX)
+### patch02 Dispersion Radius Tuning v1 (2025-01-XX)
 
 **Change:**
 
@@ -237,6 +237,37 @@ Entries are listed in reverse chronological order (most recent first).
 **Files modified:**
 
 - `lib/engine_v2/curves.ts` (default dispersion constant + call site)
+- `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (configuration + refinement notes)
+- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (dispersion step)
+- `docs/specs/engine_v2/ENGINE_V2_OVERVIEW.md` (pipeline overview)
+
+### patch02 Micro-dispersion Refinement (2025-01-XX)
+
+**Change:**
+
+- Default dispersion radius reduced again from 5% → 2% of the canvas diagonal.
+- Recommended range narrowed to 1–4% so dispersed origins remain almost coincident with the anchor.
+
+**Rationale:**
+
+- QA feedback showed 5% still created clusters that felt too loose for compact compositions.
+- 2% keeps lines distinguishable without visually detaching them from Alfa/Beta positions.
+
+**Implementation:**
+
+- Updated `generateDispersedStartPoint` default parameter to `0.02`.
+- Updated `generateCurveFromPoint` to pass `0.02` when dispersing lines with `index > 0`.
+- Refreshed patch/spec docs and overview with the tighter default/range.
+
+**Compatibility:**
+
+- ✅ Determinism preserved (same seed + pointIndex + lineIndex → same dispersed point)
+- ✅ Fully compatible with anchor-first-line refinement and all sliders/mirroring
+- ✅ Non-breaking change focused purely on visuals
+
+**Files modified:**
+
+- `lib/engine_v2/curves.ts` (dispersion constant + call site)
 - `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (configuration + refinement notes)
 - `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (dispersion step)
 - `docs/specs/engine_v2/ENGINE_V2_OVERVIEW.md` (pipeline overview)
