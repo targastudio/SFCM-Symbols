@@ -1,6 +1,6 @@
 # ENGINE_V2 — Patch Index
 
-Indice delle patch applicate all'ENGINE_V2 all’interno del progetto **SFCM SYMBOLS**.
+Indice delle patch applicate all'ENGINE_V2 all’interno del progetto **SFCM SYMBOLS**. SPEC_04 (`docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`) ingloba tutte le patch elencate; questo file rimane per cronologia e onboarding.
 
 > Nota: il "contractor" per l’implementazione tecnica è un agente AI, nello specifico **Cursor AI agent**.
 
@@ -10,14 +10,14 @@ Indice delle patch applicate all'ENGINE_V2 all’interno del progetto **SFCM SYM
 
 - **ID:** patch01_SPEC_03_mirroring_revision  
 - **Data:** 2025-11-16  
-- **Scope:** revisione del mirroring definito in `SPEC_03_ENGINE_V2.md`.  
+- **Scope:** revisione del mirroring definito in `docs/reference/engine_v2/SPEC_03_ENGINE_V2.md` (poi inglobato in SPEC_04 Step 7).  
 - **Tipo:** Non-breaking, structural revision (ordine interno del pipeline).  
 - **Implementazione:** `lib/engine_v2/*` (funzione di mirroring finale sulle connections).  
 - **Contractor:** Cursor AI agent (esegue la patch a partire da `patch01_tasks.md`).  
 
 ### Documenti correlati
 
-- `SPEC_03_ENGINE_V2.md` (sezioni 2.2 e Step 1–6 aggiornate).  
+- `docs/reference/engine_v2/SPEC_03_ENGINE_V2.md` (sezioni 2.2 e Step 1–6 aggiornate).  
 - `ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con mirroring finale).  
 - `ENGINE_V2_MIGRATION_GUIDE.md` (sezione dedicata alla patch01).  
 - `ENGINE_V2_OVERVIEW.md` (overview aggiornata con mirroring finale).  
@@ -75,6 +75,5 @@ Indice delle patch applicate all'ENGINE_V2 all’interno del progetto **SFCM SYM
 - `patch_04_Length_and_Curvature_Clustering.md` (dettaglio spec della patch).  
 - `ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con profili di lunghezza/curvatura per linea).  
 - `ENGINE_V2_SLIDER_MAPPING.md` (note su interazione Slider1/Slider2 con i profili).  
-- `ENGINE_V2_DEBUG_OVERLAY.md` (debug overlay aggiornato con visualizzazione profili).  
+- `engine-v2-debug-overlay.md` (debug overlay aggiornato con visualizzazione profili).  
 - `CHANGELOG_SFCM_SYMBOLS.md` (entry patch04).
-

@@ -1,7 +1,7 @@
 # ENGINE_V2 — Semantic Map v2 Tasks (for Cursor)
 
 **Scope:**  
-This document describes the concrete steps Cursor must perform to implement the new 4‑axis semantic mapping logic in the codebase, using `semantic/semantic-map-v2.json` and detaching completely from the old 6‑axis map.
+This document describes the concrete steps Cursor must perform to implement the new 4‑axis semantic mapping logic in the codebase, using `semantic/semantic-map-v2.json` and detaching completely from the old 6-axis map. It mirrors §2 di `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
 
 **Important constraints:**
 
@@ -16,7 +16,7 @@ This document describes the concrete steps Cursor must perform to implement the 
 
 Cursor should work mainly on these files/modules:
 
-- `docs/ENGINE_V2_SEMANTIC_MAP.md` (this spec)
+- `docs/reference/engine_v2/ENGINE_V2_SEMANTIC_MAP.md` (this spec)
 - `lib/engine_v2/axes.ts` (or equivalent engine_v2 mapping module)
 - `lib/engine_v2/engine.ts` (or the ENGINE_V2 orchestrator)
 - Any place where keywords are currently converted to axes for ENGINE_V2
@@ -297,7 +297,7 @@ Cursor should also verify in code that:
 
 ## 6. Summary for Cursor
 
-- Use `docs/ENGINE_V2_SEMANTIC_MAP.md` as the **source of truth** for the mapping logic.
+- Use `docs/reference/engine_v2/ENGINE_V2_SEMANTIC_MAP.md` as the **source of truth** for the mapping logic.
 - Implement:
   - `normalizeKeywordV2`
   - `fallbackAxesV2`

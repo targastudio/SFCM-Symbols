@@ -4,6 +4,8 @@
 **Type:** Feature Enhancement (Non-breaking, Visual Improvement)
 **Status:** ✅ Implemented
 
+> SPEC_04 reference: Step 3 (Point dispersion) in `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
+
 ---
 
 # 1. Purpose of This Patch
@@ -297,4 +299,4 @@ const dispersedStart = i === 0
 - **Current implementation:** `lib/engine_v2/curves.ts` - `generateCurveFromPoint`
 - **PRNG system:** `lib/seed.ts` - `prng` function
 - **Position mapping:** `lib/engine_v2/position.ts` - `axesToPixelPosition`
-- **Related docs:** `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`
+- **Related docs:** `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`

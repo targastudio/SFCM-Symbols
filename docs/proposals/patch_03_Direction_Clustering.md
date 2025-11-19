@@ -4,6 +4,8 @@
 **Type:** Feature Enhancement (Non-breaking, Visual Improvement)
 **Status:** ✅ Implemented
 
+> SPEC_04 reference: Step 4 (Direction clustering) in `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
+
 ---
 
 # 1. Purpose of This Patch
@@ -265,11 +267,11 @@ This allows direct random number generation without needing to call the PRNG fun
 - `app/page.tsx` - Added UI sliders for clusterCount and clusterSpread
 
 **Documentation:**
-- `docs/patches/patch_03_Direction_Clustering.md` (this file)
-- `docs/patches/PATCHES_INDEX.md` (updated with patch03 entry)
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated direction section)
-- `docs/specs/engine_v2/ENGINE_V2_SLIDER_MAPPING.md` (added slider documentation)
-- `docs/development/changelog/CHANGELOG_SFCM_SYMBOLS.md` (added patch03 entry)
+- `docs/proposals/patch_03_Direction_Clustering.md` (this file)
+- `docs/proposals/PATCHES_INDEX.md` (updated with patch03 entry)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated direction section)
+- `docs/reference/engine_v2/ENGINE_V2_SLIDER_MAPPING.md` (added slider documentation)
+- `docs/changes/CHANGELOG_SFCM_SYMBOLS.md` (added patch03 entry)
 
 ---
 
@@ -309,6 +311,5 @@ This allows direct random number generation without needing to call the PRNG fun
 
 - **Current implementation:** `lib/engine_v2/curves.ts` - `getLineDirection`
 - **PRNG system:** `lib/seed.ts` - `seededRandom`, `prng` functions
-- **Related docs:** `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`
-- **Slider mapping:** `docs/specs/engine_v2/ENGINE_V2_SLIDER_MAPPING.md`
-
+- **Related docs:** `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`
+- **Slider mapping:** `docs/reference/engine_v2/ENGINE_V2_SLIDER_MAPPING.md`

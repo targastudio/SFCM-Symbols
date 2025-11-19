@@ -179,7 +179,7 @@ The following files were verified but not modified (as they were already complia
 
 ### 5.1 Seed Generation Formula
 
-**Location**: `docs/SPEC_03_ENGINE_V2.md` line 122 vs `app/page.tsx` line 147
+**Location**: `docs/reference/engine_v2/SPEC_03_ENGINE_V2.md` line 122 vs `app/page.tsx` line 147
 
 **SPEC_03 Formula**:
 ```
@@ -206,7 +206,7 @@ hash(keywords + canvasWidth + canvasHeight)
 
 ### 5.2 Position Formula Notation
 
-**Location**: `docs/SPEC_03_ENGINE_V2.md` vs `docs/ENGINE_V2_GEOMETRY_PIPELINE.md`
+**Location**: `docs/reference/engine_v2/SPEC_03_ENGINE_V2.md` vs `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`
 
 **SPEC_03**:
 ```
@@ -287,7 +287,7 @@ yNorm = 0.5 - (Beta / 100) * 0.5
 4. ✅ Apply Gamma/Delta (line 168-198)
 5. ✅ Convert to BranchedConnection (line 200-202)
 
-**Reference**: Matches `docs/ENGINE_V2_GEOMETRY_PIPELINE.md` sections 1-8
+**Reference**: Matches `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` sections 1-8
 
 ### 6.6 Preview, Animation, Export
 
@@ -340,4 +340,3 @@ The codebase is **production-ready** and **fully compliant** with ENGINE_V2 spec
 ---
 
 **End of Audit Report V2**
-

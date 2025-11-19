@@ -31,5 +31,4 @@ Report e documentazione della migrazione a ENGINE_V2:
 
 ---
 
-**Per la documentazione corrente attiva, vedi**: `/docs/specs/engine_v2/`
-
+**Per la documentazione corrente attiva, vedi**: `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md` (fonte unica) e, per materiali di supporto, `docs/reference/engine_v2/`.

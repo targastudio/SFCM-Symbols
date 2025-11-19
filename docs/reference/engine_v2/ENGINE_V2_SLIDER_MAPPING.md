@@ -1,5 +1,7 @@
 # ENGINE V2 — Slider Mapping
 
+Riferimento operativo per i controlli UI descritti in SPEC_04 (Step 4-6).
+
 ## 1. Slider attivi
 
 ### Slider1: "Lunghezza linee"
@@ -72,4 +74,3 @@ Gli slider seguenti sono mantenuti nell'interfaccia ma non hanno ancora logica a
 - **Mutamento**: placeholder, nessun effetto sulla generazione
 
 La nuova logica per questi slider sarà definita in futuro secondo le specifiche ENGINE_V2.
-

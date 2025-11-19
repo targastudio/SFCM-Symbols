@@ -10,7 +10,7 @@
 
 This audit verifies that:
 
-1. The new ENGINE_V2 semantic mapping system (4-axis: Alfa, Beta, Gamma, Delta) is correctly implemented according to `docs/ENGINE_V2_SEMANTIC_MAP.md` and `docs/ENGINE_V2_SEMANTIC_MAP_TASKS.md`.
+1. The new ENGINE_V2 semantic mapping system (4-axis: Alfa, Beta, Gamma, Delta) is correctly implemented according to `docs/reference/engine_v2/ENGINE_V2_SEMANTIC_MAP.md` and `docs/reference/engine_v2/ENGINE_V2_SEMANTIC_MAP_TASKS.md`.
 
 2. The old 6-axis semantic engine (`lib/semantic.ts` + `semantic/semantic-map.json`) is **fully detached** from the runtime and exists only as legacy reference.
 
@@ -402,4 +402,3 @@ The ENGINE_V2 semantic mapping implementation is **fully compliant** with the do
 ---
 
 **End of Audit Report**
-

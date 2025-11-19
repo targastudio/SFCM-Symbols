@@ -1,7 +1,7 @@
 # ENGINE_V2 — Semantic Map v2 Specification
 
 **Scope:**  
-This document defines how the new 4‑axis semantic dictionary works in ENGINE_V2 and how the mapping logic must be implemented in the codebase.
+This document defines how the new 4‑axis semantic dictionary works in ENGINE_V2 and how the mapping logic must be implemented in the codebase. It corresponds to Step 1 del `SPEC_04_COSMOGRAPH_ENGINE`.
 
 **Important constraints:**
 

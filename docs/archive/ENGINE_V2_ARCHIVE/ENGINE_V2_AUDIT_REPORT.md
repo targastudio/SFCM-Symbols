@@ -508,13 +508,13 @@ return String(cyrb53(params));
 ### Priority 2: High (Spec Alignment)
 
 2. **Clarify Seed Generation Formula**
-   - **File**: `app/page.tsx` (line 141-149), `docs/SPEC_03_ENGINE_V2.md` (line 122)
+   - **File**: `app/page.tsx` (line 141-149), `docs/reference/engine_v2/SPEC_03_ENGINE_V2.md` (line 122)
    - **Issue**: SPEC_03 mentions `valori_assi + slider` in seed, but implementation excludes them
    - **Fix**: Update SPEC_03 to match implementation, or update implementation to match spec
    - **Impact**: Ensures spec accuracy
 
 3. **Resolve Position Formula Documentation Inconsistency**
-   - **Files**: `docs/SPEC_03_ENGINE_V2.md`, `docs/ENGINE_V2_GEOMETRY_PIPELINE.md`
+   - **Files**: `docs/reference/engine_v2/SPEC_03_ENGINE_V2.md`, `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`
    - **Issue**: Different written forms (but mathematically equivalent)
    - **Fix**: Standardize documentation to one form
    - **Impact**: Prevents confusion
@@ -577,7 +577,7 @@ return String(cyrb53(params));
 
 ### ⚠️ Warning 3: Seed Formula Ambiguity
 
-**Location**: `docs/SPEC_03_ENGINE_V2.md` (line 122) vs `app/page.tsx` (line 147)
+**Location**: `docs/reference/engine_v2/SPEC_03_ENGINE_V2.md` (line 122) vs `app/page.tsx` (line 147)
 
 **Issue**: SPEC_03 formula includes `valori_assi + slider`, but implementation excludes them
 
@@ -617,8 +617,8 @@ return String(cyrb53(params));
 ### Files Requiring Action
 
 1. **`components/SvgPreview.tsx`** — Extract `computeCurveControl` dependency
-2. **`docs/SPEC_03_ENGINE_V2.md`** — Clarify seed formula
-3. **`docs/ENGINE_V2_GEOMETRY_PIPELINE.md`** — Standardize position formula notation
+2. **`docs/reference/engine_v2/SPEC_03_ENGINE_V2.md`** — Clarify seed formula
+3. **`docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`** — Standardize position formula notation
 4. **`lib/geometry.ts`** — Add deprecation notice, extract `computeCurveControl`
 5. **`lib/semantic.ts`** — Add deprecation notice
 
@@ -652,4 +652,3 @@ The codebase is **production-ready** after addressing Priority 1, and **fully co
 ---
 
 **End of Audit Report**
-

@@ -1,6 +1,6 @@
 # Feature Branching_beta01 — Ramificazioni da intersezioni
 
-Versione: 1.0
+Versione: 1.0 — SPEC_04 Step 8 reference (`docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md:270-320`)
 
 ## Scopo
 
@@ -16,7 +16,7 @@ Aggiungere una fase di **branching** alla fine della pipeline geometry ENGINE_V2
    - Lunghezze basate su frazioni della diagonale del canvas (6%–12%) per garantire compatibilità con qualsiasi formato.
    - Curvatura leggera opzionale (|curvature| ≤ 0.35) e tratteggio deterministico per varietà visiva.
 3. **Mantenere il determinismo end-to-end**
-   - Tutta la randomizzazione usa il seed globale di ENGINE_V2.
+   - Tutta la randomizzazione usa il seed globale di ENGINE_V2 con prefissi espliciti (`branching:*`).
    - Stesso set di keyword + seed + canvas size → stesso set di intersezioni e stesse ramificazioni.
 
 ## Vincoli
@@ -41,10 +41,10 @@ La fase di branching viene eseguita **dopo** il mirroring finale (`applyFinalMir
    - Parametri fissi:
      - Max intersezioni considerate: `min(30, intersections.length)` con selezione **deterministicamente mescolata** per evitare bias sui primi cluster generati.
      - Max rami per intersezione: 2.
-     - Lunghezza ramo: `diag * (0.06 + r * 0.06)` con `diag = sqrt(w² + h²)` e `r = seededRandom(seed:len:i)`.
-     - Offset angolare: ±60° deterministico (`seed:angle:i:branchIndex`).
-     - Curvatura: `(seededRandom(seed:curv:i:branchIndex) - 0.5) * 0.7`, `curved = |curvature| > 0.08`.
-     - Tratteggio: `seededRandom(seed:dash:i:branchIndex) < 0.35`.
+     - Lunghezza ramo: `diag * (0.06 + r * 0.06)` con `diag = sqrt(w² + h²)` e `r = seededRandom(\`${seed}:branching:length:${i}:${branchIndex}\`)`.
+     - Offset angolare: ±60° deterministico (`seededRandom(\`${seed}:branching:angle:${i}:${branchIndex}\`)`).
+     - Curvatura: `(seededRandom(\`${seed}:branching:curvature:${i}:${branchIndex}\`) - 0.5) * 0.7`, `curved = |curvature| > 0.08`.
+     - Tratteggio: `seededRandom(\`${seed}:branching:dashed:${i}:${branchIndex}\`) < 0.35`.
    - Direzione base: media normalizzata dei vettori delle connessioni incidenti; fallback `(1,0)` se zero.
    - Punto finale clampato con `clampToCanvas`.
    - Ogni ramo è un `BranchedConnection` con `generationDepth = 1` e `generatedFrom = intersectionIndex`.
@@ -69,4 +69,4 @@ La fase di branching viene eseguita **dopo** il mirroring finale (`applyFinalMir
 
 - Implementazione `lib/engine_v2/branching.ts` con detection + generation.
 - Integrazione in `lib/engine_v2/engine.ts` subito dopo il mirroring finale.
-- Aggiornamento `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` e changelog.
+- Aggiornamento `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` e changelog.

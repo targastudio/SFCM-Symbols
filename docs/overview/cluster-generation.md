@@ -2,6 +2,8 @@
 
 This document explains how directional clusters are created in the Engine V2 geometry pipeline and how they influence the resulting symbol generations.
 
+> **SPEC reference**: Matches Step 4 (Direction clustering) and Step 5-6 (Length/curvature profiles) of `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
+
 ## How clusters are generated
 
 1. **Evenly spaced cluster centers**

@@ -4,6 +4,8 @@
 **Type:** Feature Enhancement (Non-breaking, Visual Improvement)
 **Status:** ✅ Implemented (ENGINE_V2 runtime + debug overlay)
 
+> SPEC_04 reference: Step 5–6 (Length & curvature profiles) in `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
+
 ---
 
 # 1. Purpose of This Patch
@@ -812,10 +814,10 @@ function computeCurvatureProfileMultiplier(
   - Optionally: Add `getLineLengthProfiled` wrapper
 
 **Documentation:**
-- `docs/patches/patch_04_Length_and_Curvature_Clustering.md` (this file)
-- `docs/patches/PATCHES_INDEX.md` (add patch04 entry)
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (update Gamma/Delta sections)
-- `docs/development/changelog/CHANGELOG_SFCM_SYMBOLS.md` (add patch04 entry)
+- `docs/proposals/patch_04_Length_and_Curvature_Clustering.md` (this file)
+- `docs/proposals/PATCHES_INDEX.md` (add patch04 entry)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (update Gamma/Delta sections)
+- `docs/changes/CHANGELOG_SFCM_SYMBOLS.md` (add patch04 entry)
 
 **Optional (debug):**
 - `lib/types.ts` (extend `DirectionClusterDebug` with profile fields)
@@ -827,10 +829,10 @@ function computeCurvatureProfileMultiplier(
 
 - **Current implementation:** `lib/engine_v2/curves.ts` - `getLineLength`, `applyDeltaIrregularity`, `generateCurveFromPoint`
 - **PRNG system:** `lib/seed.ts` - `seededRandom`, `prng` functions
-- **Direction clustering:** `docs/patches/patch_03_Direction_Clustering.md`
-- **Point dispersion:** `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md`
-- **Slider mapping:** `docs/specs/engine_v2/ENGINE_V2_SLIDER_MAPPING.md`
-- **Geometry pipeline:** `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`
+- **Direction clustering:** `docs/proposals/patch_03_Direction_Clustering.md`
+- **Point dispersion:** `docs/proposals/patch_02_Point_Dispersion_at_Line_Origin.md`
+- **Slider mapping:** `docs/reference/engine_v2/ENGINE_V2_SLIDER_MAPPING.md`
+- **Geometry pipeline:** `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`
 
 ---
 
@@ -844,4 +846,3 @@ function computeCurvatureProfileMultiplier(
 6. **Update documentation** (see section 9)
 
 **Status:** This document reflects the implemented behavior of patch04 in ENGINE_V2 and debug overlay.
-

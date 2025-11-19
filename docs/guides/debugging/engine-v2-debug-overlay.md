@@ -195,7 +195,7 @@ All debug functionality is isolated and easy to remove:
 ### Files to Remove
 
 1. `components/DebugOverlay.tsx` - The debug overlay component
-2. `docs/debug/` - This entire folder
+2. `docs/guides/debugging/` - This entire folder
 
 ### Code Changes to Revert
 
@@ -258,5 +258,5 @@ After removal:
 
 ---
 
-**End of ENGINE_V2_DEBUG_OVERLAY.md**
+**End of engine-v2-debug-overlay.md**
 

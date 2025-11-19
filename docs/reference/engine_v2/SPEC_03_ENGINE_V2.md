@@ -1,5 +1,7 @@
 # SPEC_03 — ENGINE V2 (4 Assi) — SFCM Symbol Generator
 
+> **Legacy notice**: SPEC_04 (`docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`) sostituisce integralmente questo documento. Manteniamo SPEC_03 per storico e confronto.
+
 ## Stato del documento
 Questo documento definisce **la nuova architettura del motore di generazione** (ENGINE_V2) basata su 4 assi semantici:
 

@@ -4,6 +4,9 @@ This changelog documents all significant changes to the SFCM Symbol Generator pr
 
 Entries are listed in reverse chronological order (most recent first).
 
+> **SPEC state**: the canonical reference for ENGINE_V2 is `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.  
+> Legacy references to SPEC_03 remain only for historical traceability—when you see `docs/reference/engine_v2/*` below, treat them as archives of the SPEC_03 era.
+
 ---
 
 ## 2025-02-XX – FEATURE: Branching_beta01 (ENGINE_V2)
@@ -21,8 +24,8 @@ Entries are listed in reverse chronological order (most recent first).
 **Files modified/added:**
 - `lib/engine_v2/branching.ts` (nuovo modulo: detection + branching deterministico)
 - `lib/engine_v2/engine.ts` (integrazione step Branching_beta01 dopo il mirroring finale)
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con lo step di branching)
-- `docs/specs/features/feature_branching_beta01.md` (specifica della feature)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con lo step di branching)
+- `docs/reference/features/feature_branching_beta01.md` (specifica della feature)
 
 **Note:** nessun cambiamento alla UI o agli input; output arricchito con rami generati dalle intersezioni mantenendo la compatibilità con l’ordinamento di rendering esistente.
 
@@ -82,10 +85,10 @@ Entries are listed in reverse chronological order (most recent first).
 - `components/DebugOverlay.tsx` (visual encoding of profiles)
 
 **Documentation:**
-- `docs/patches/patch_04_Length_and_Curvature_Clustering.md` (patch specification, updated as implemented)
-- `docs/patches/PATCHES_INDEX.md` (added patch04 entry)
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (Gamma/Delta sections updated with profiles and correlation)
-- `docs/development/debug/ENGINE_V2_DEBUG_OVERLAY.md` (documented profile visualization)
+- `docs/proposals/patch_04_Length_and_Curvature_Clustering.md` (patch specification, updated as implemented)
+- `docs/proposals/PATCHES_INDEX.md` (added patch04 entry)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (Gamma/Delta sections updated with profiles and correlation)
+- `docs/guides/debugging/engine-v2-debug-overlay.md` (documented profile visualization)
 
 ---
 
@@ -145,10 +148,10 @@ Entries are listed in reverse chronological order (most recent first).
 - `app/page.tsx` (added UI sliders for clusterCount and clusterSpread)
 
 **Documentation:**
-- `docs/patches/patch_03_Direction_Clustering.md` (patch specification)
-- `docs/patches/PATCHES_INDEX.md` (updated with patch03 entry)
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated direction section)
-- `docs/specs/engine_v2/ENGINE_V2_SLIDER_MAPPING.md` (added slider documentation)
+- `docs/proposals/patch_03_Direction_Clustering.md` (patch specification)
+- `docs/proposals/PATCHES_INDEX.md` (updated with patch03 entry)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated direction section)
+- `docs/reference/engine_v2/ENGINE_V2_SLIDER_MAPPING.md` (added slider documentation)
 
 ---
 
@@ -191,9 +194,9 @@ Entries are listed in reverse chronological order (most recent first).
 - `lib/engine_v2/curves.ts` (new function + modified loop)
 
 **Documentation:**
-- `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (patch specification)
-- `docs/patches/PATCHES_INDEX.md` (updated with patch02 entry)
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated pipeline with dispersion step)
+- `docs/proposals/patch_02_Point_Dispersion_at_Line_Origin.md` (patch specification)
+- `docs/proposals/PATCHES_INDEX.md` (updated with patch02 entry)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated pipeline with dispersion step)
 
 ### patch02 Refinement (2025-01-XX)
 
@@ -231,9 +234,9 @@ Entries are listed in reverse chronological order (most recent first).
 
 - `lib/engine_v2/curves.ts` (dispersedStart assignment logic)
 
-- `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (refinement section)
+- `docs/proposals/patch_02_Point_Dispersion_at_Line_Origin.md` (refinement section)
 
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (section 3 updated)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (section 3 updated)
 
 ### patch02 Dispersion Radius Tuning v1 (2025-01-XX)
 
@@ -262,9 +265,9 @@ Entries are listed in reverse chronological order (most recent first).
 **Files modified:**
 
 - `lib/engine_v2/curves.ts` (default dispersion constant + call site)
-- `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (configuration + refinement notes)
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (dispersion step)
-- `docs/specs/engine_v2/ENGINE_V2_OVERVIEW.md` (pipeline overview)
+- `docs/proposals/patch_02_Point_Dispersion_at_Line_Origin.md` (configuration + refinement notes)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (dispersion step)
+- `docs/reference/engine_v2/ENGINE_V2_OVERVIEW.md` (pipeline overview)
 
 ### patch02 Micro-dispersion Refinement (2025-01-XX)
 
@@ -293,9 +296,9 @@ Entries are listed in reverse chronological order (most recent first).
 **Files modified:**
 
 - `lib/engine_v2/curves.ts` (dispersion constant + call site)
-- `docs/patches/patch_02_Point_Dispersion_at_Line_Origin.md` (configuration + refinement notes)
-- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (dispersion step)
-- `docs/specs/engine_v2/ENGINE_V2_OVERVIEW.md` (pipeline overview)
+- `docs/proposals/patch_02_Point_Dispersion_at_Line_Origin.md` (configuration + refinement notes)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (dispersion step)
+- `docs/reference/engine_v2/ENGINE_V2_OVERVIEW.md` (pipeline overview)
 
 ---
 
@@ -352,11 +355,11 @@ Entries are listed in reverse chronological order (most recent first).
 - `app/page.tsx` (wired to ENGINE_V2)
 
 **Documentation:**
-- `docs/ENGINE_V2/SPEC_03_ENGINE_V2.md` (main specification)
-- `docs/ENGINE_V2/ENGINE_V2_OVERVIEW.md` (architecture overview)
-- `docs/ENGINE_V2/ENGINE_V2_GEOMETRY_PIPELINE.md` (detailed pipeline)
-- `docs/ENGINE_V2/ENGINE_V2_SEMANTIC_MAP.md` (semantic mapping)
-- `docs/ENGINE_V2/ENGINE_V2_MIGRATION_GUIDE.md` (migration guide)
+- `docs/reference/engine_v2/SPEC_03_ENGINE_V2.md` (main specification – archived)
+- `docs/reference/engine_v2/ENGINE_V2_OVERVIEW.md` (architecture overview – archived)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (detailed pipeline – archived)
+- `docs/reference/engine_v2/ENGINE_V2_SEMANTIC_MAP.md` (semantic mapping)
+- `docs/reference/engine_v2/ENGINE_V2_MIGRATION_GUIDE.md` (migration guide – archived)
 
 ---
 
@@ -400,8 +403,8 @@ Entries are listed in reverse chronological order (most recent first).
 - `lib/engine_v2/mirroring.ts` (deprecated, kept for reference)
 
 **Documentation:**
-- `docs/patches/patch01_SPEC_03_mirroring_revision.md` (patch specification)
-- `docs/patches/patch01_tasks.md` (implementation tasks)
+- `docs/proposals/patch01_SPEC_03_mirroring_revision.md` (patch specification)
+- `docs/proposals/patch01_tasks.md` (implementation tasks)
 
 ---
 
@@ -440,8 +443,8 @@ Entries are listed in reverse chronological order (most recent first).
 - `lib/types.ts` (`EngineV2Options` type)
 
 **Documentation:**
-- `docs/ENGINE_V2/ENGINE_V2_SLIDER_MAPPING.md` (slider mapping reference)
-- `docs/ENGINE_V2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated with lengthScale note)
+- `docs/reference/engine_v2/ENGINE_V2_SLIDER_MAPPING.md` (slider mapping reference)
+- `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (updated with lengthScale note)
 
 ---
 
@@ -473,8 +476,8 @@ Entries are listed in reverse chronological order (most recent first).
 - `lib/engine_v2/types.ts` (`EngineV2DebugInfo` type)
 
 **Documentation:**
-- `docs/debug/ENGINE_V2_DEBUG_OVERLAY.md` (debug overlay guide)
-- `docs/debug/README.md` (debug tools overview)
+- `docs/guides/debugging/engine-v2-debug-overlay.md` (debug overlay guide)
+- `docs/guides/debugging/README.md` (debug tools overview)
 
 ---
 

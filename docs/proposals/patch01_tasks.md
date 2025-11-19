@@ -1,5 +1,7 @@
 # patch01_tasks — Implement Final Geometry Mirroring
 
+> SPEC_04 note: questa patch costituisce l'attuale Step 7 del Cosmograph Engine. Il file rimane per traccia storica del rollout.
+
 **Target:** ENGINE_V2  
 **Patch:** patch01_SPEC_03_mirroring_revision  
 **Status:** REQUIRED
@@ -23,7 +25,7 @@ DO NOT delete the files yet — mark all old mirroring code as:
 Create:
 
 ```
-lib/engine_v2/mirroring_final.ts
+lib/engine_v2/finalMirroring.ts
 ```
 
 with this API:
@@ -92,8 +94,8 @@ This step must happen AFTER:
 # 5. Update Docs in Repo
 Update these files to reference the new final mirroring:
 
-- docs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md  
-- docs/patches/patch01_SPEC_03_mirroring_revision.md (already there)
+- docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md  
+- docs/proposals/patch01_SPEC_03_mirroring_revision.md (already there)
 
 Remove old mirroring references.
 

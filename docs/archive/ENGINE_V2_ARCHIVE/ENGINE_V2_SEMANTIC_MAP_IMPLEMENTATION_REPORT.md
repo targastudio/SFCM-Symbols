@@ -9,8 +9,8 @@
 ## 1. Summary
 
 The new semantic mapping system for ENGINE_V2 has been successfully implemented according to:
-- `docs/ENGINE_V2_SEMANTIC_MAP.md`
-- `docs/ENGINE_V2_SEMANTIC_MAP_TASKS.md`
+- `docs/reference/engine_v2/ENGINE_V2_SEMANTIC_MAP.md`
+- `docs/reference/engine_v2/ENGINE_V2_SEMANTIC_MAP_TASKS.md`
 
 **Key Achievements**:
 - ✅ New semantic mapping module implemented (`lib/engine_v2/axes.ts`)
@@ -366,4 +366,3 @@ The new semantic mapping system for ENGINE_V2 has been **fully implemented** acc
 ---
 
 **End of Implementation Report**
-
