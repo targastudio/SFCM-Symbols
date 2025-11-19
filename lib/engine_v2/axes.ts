@@ -26,7 +26,7 @@ import semanticMapV2 from "../../semantic/semantic-map-v2.json";
  * @param raw Raw keyword string
  * @returns Normalized keyword (trimmed, lowercase)
  */
-export function normalizeKeywordV2(raw: string): string {
+function normalizeKeywordV2(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
@@ -42,7 +42,7 @@ export function normalizeKeywordV2(raw: string): string {
  * @param raw Raw data from JSON (unknown type)
  * @returns Sanitized AxesV2 or null if invalid
  */
-export function sanitizeAxesV2(raw: unknown): AxesV2 | null {
+function sanitizeAxesV2(raw: unknown): AxesV2 | null {
   // Type guard: check if raw is an object with the expected structure
   if (
     typeof raw !== "object" ||
@@ -96,7 +96,7 @@ export function sanitizeAxesV2(raw: unknown): AxesV2 | null {
  * @param normalized Normalized keyword (already trimmed and lowercased)
  * @returns Deterministic AxesV2 with values in [-100, +100]
  */
-export function fallbackAxesV2(normalized: string): AxesV2 {
+function fallbackAxesV2(normalized: string): AxesV2 {
   const rng = seedrandom(`axes_v2:${normalized}`);
 
   const randAxis = (): number => {
@@ -193,14 +193,3 @@ export function getAxesForKeywordV2(
   return fallbackAxesV2(normalized);
 }
 
-/**
- * Legacy function name for backward compatibility during migration
- * 
- * @deprecated Use getAxesForKeywordV2 instead
- * This function is kept temporarily to avoid breaking existing code.
- * It will be removed once all call sites are updated.
- */
-export async function getAxesV2ForKeyword(word: string): Promise<AxesV2> {
-  const map = getSemanticMapV2();
-  return getAxesForKeywordV2(word, map);
-}

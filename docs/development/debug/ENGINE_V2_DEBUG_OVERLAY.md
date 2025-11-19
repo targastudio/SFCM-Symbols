@@ -60,6 +60,11 @@ The debug overlay renders:
 7. **Direction Clustering & Profile Visualization (patch03 + patch04)**:
    - **Cluster centers (before Gamma rotation)**: Dashed magenta lines showing the original cluster center angles (distributed evenly across 0-180°).
    - **Final cluster centers (after Gamma rotation)**: Solid magenta lines showing cluster centers after Gamma rotation is applied.
+   - **Cluster areas (per-cluster start dispersion)**: Semi-transparent colored polygons built from the dispersed start points of lines in each cluster.
+     - Shows where clusters originate on the canvas.
+     - If fewer than 3 points exist, circles are used instead of a polygon.
+     - Dots for every dispersed start point highlight cluster membership.
+     - A label (e.g., "Cluster 1") is placed at the centroid of the cluster area.
    - **Direction indicators**: Small colored lines showing the final direction of each line (one per line generated).
      - Each cluster has a different color (hue based on cluster index).
      - Lines radiate from the anchor point in the direction of each line.
@@ -165,6 +170,7 @@ The debug overlay helps visualize:
 4. **Direction Clustering (patch03)**:
    - **Cluster centers (dashed magenta)**: Show where clusters are positioned before Gamma rotation
    - **Final cluster centers (solid magenta)**: Show where clusters are positioned after Gamma rotation
+   - **Cluster areas (tinted polygons + dots)**: Show where each cluster's dispersed start points land on the canvas
    - **Direction lines (colored)**: Each line's final direction, color-coded by cluster
    - **Interpretation**:
      - Lines of the same color belong to the same cluster

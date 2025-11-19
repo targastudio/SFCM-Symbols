@@ -6,6 +6,31 @@ Entries are listed in reverse chronological order (most recent first).
 
 ---
 
+## 2025-02-XX – FEATURE: Branching_beta01 (ENGINE_V2)
+
+### Branching dalle intersezioni post-mirroring
+
+- **Nuovo step geometry**: generazione deterministica di ramificazioni dalle intersezioni tra linee finali (dopo il mirroring).
+  - Rilevamento intersezioni con campionamento Bézier (12 campioni per curva) e arrotondamento a 1px per unione di punti vicini.
+  - Filtro hard cap: massimo 30 intersezioni considerate; 1–2 rami per intersezione con selezione **mescolata in modo deterministico** per coprire tutti i cluster generati e non solo il primo.
+  - Lunghezze rami proporzionali alla diagonale del canvas (6%–12%), offset angolare ±60°, curvatura opzionale (|curvature| > 0.08) e tratteggio deterministico (35%).
+  - I rami ereditano `generationDepth = 1` per essere renderizzati dopo le linee primarie.
+- **Determinismo**: tutti i random usano `seededRandom` con prefissi espliciti (`branching:count/length/angle/curvature/dashed`).
+- **Compatibilità**: nessun nuovo input/UI, canvas bounds sempre rispettati via clamp, funzionamento invariato su tutti i formati.
+
+**Files modified/added:**
+- `lib/engine_v2/branching.ts` (nuovo modulo: detection + branching deterministico)
+- `lib/engine_v2/engine.ts` (integrazione step Branching_beta01 dopo il mirroring finale)
+- `docs/specs/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md` (pipeline aggiornata con lo step di branching)
+- `docs/specs/features/feature_branching_beta01.md` (specifica della feature)
+
+**Note:** nessun cambiamento alla UI o agli input; output arricchito con rami generati dalle intersezioni mantenendo la compatibilità con l’ordinamento di rendering esistente.
+
+### Debug overlay (ENGINE_V2)
+
+- **Visualizzazione cluster più chiara**: l'overlay ora mostra poligoni semi-trasparenti (o cerchi se <3 punti) costruiti dai punti di partenza dispersi di ciascun cluster, con etichetta del cluster al baricentro e punti singoli per ogni start point.
+- **Nuovo dato di debug**: ogni `DirectionClusterDebug` include il `startPoint` (punto di partenza disperso) per poter disegnare le aree per-cluster sul canvas.
+
 ## 2025-01-XX – PATCH04: Length & Curvature Clustering
 
 ### PATCH04 – Length & Curvature Clustering per Point

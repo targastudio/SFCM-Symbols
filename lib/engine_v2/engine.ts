@@ -12,6 +12,7 @@
  * 3. Apply Gamma (number, direction, length) and Delta (curvature, jitter) via curves.ts
  * 4. Convert to BranchedConnection format for rendering
  * 5. Final geometry mirroring (patch01) via finalMirroring.ts - applied AFTER curve generation
+ * 6. Branching from intersections (Branching_beta01) via branching.ts - applied AFTER mirroring
  * 
  * Reference: docs/ENGINE_V2_GEOMETRY_PIPELINE.md for complete pipeline specification
  * Reference: docs/patches/patch01_SPEC_03_mirroring_revision.md for mirroring revision
@@ -25,13 +26,14 @@ import {
 import { axesToNormalizedPosition, normalizedToPixel, getQuadrant } from "./position";
 import { generateCurveFromPoint } from "./curves";
 import { applyFinalMirroring, computeMirroringDebugInfo } from "./finalMirroring";
+import { applyBranching } from "./branching";
 
 /**
  * ENGINE_V2 options type
  * 
  * Contains optional parameters for ENGINE_V2 generation.
  */
-export type EngineV2Options = {
+type EngineV2Options = {
   lengthScale?: number; // Multiplier for line length (default: 1.0)
   curvatureScale?: number; // Multiplier for curve intensity (default: 1.0)
   clusterCount?: number; // Number of direction clusters (default: 3)
@@ -44,7 +46,7 @@ export type EngineV2Options = {
  * Contains the generated connections and optional debug information.
  * The debug field is only populated for debugging/development purposes.
  */
-export type EngineV2Result = {
+type EngineV2Result = {
   connections: BranchedConnection[];
   debug?: EngineV2DebugInfo;
 };
@@ -238,6 +240,14 @@ export async function generateEngineV2(
   // Mirroring is applied AFTER curve generation as a final geometry step
   const mirroredConnections = applyFinalMirroring(connections, canvasWidth, canvasHeight, seed);
 
+  // Step 6: Branching (Branching_beta01) - generate new lines from intersections AFTER mirroring
+  const branchedConnections = applyBranching(
+    mirroredConnections,
+    canvasWidth,
+    canvasHeight,
+    seed
+  );
+
   // Capture debug info (anchor point BEFORE mirroring, plus mirroring info, plus clustering debug)
   const debug: EngineV2DebugInfo | undefined = includeDebug && basePoints.length > 0
     ? {
@@ -264,7 +274,7 @@ export async function generateEngineV2(
     : undefined;
 
   return {
-    connections: mirroredConnections,
+    connections: branchedConnections,
     debug,
   };
 }

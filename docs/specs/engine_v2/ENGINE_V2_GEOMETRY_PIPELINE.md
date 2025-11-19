@@ -158,11 +158,34 @@ Questo step implementa la patch di mirroring.
   5. Merge di originali + specchiate in un unico array.
 
 - Il mirroring è:
-  - **post-processing geometrico** (non modifica i dati di input)  
-  - **deterministico** (stesso seed → stesso output)  
+  - **post-processing geometrico** (non modifica i dati di input)
+  - **deterministico** (stesso seed → stesso output)
   - completamente interno all’ENGINE_V2.
 
-## 7. Output finale
+## 7. Branching dalle intersezioni (Branching_beta01)
+
+Step finale applicato **dopo** il mirroring.
+
+- **Input:** array di `Connection` già specchiati.
+- **Rilevamento intersezioni:**
+  - Approssima ogni curva quadratica con 12 campioni uniformi (`t = 0..1`).
+  - Confronta tutti i segmenti delle polilinee campionate usando `segmentIntersection` (t/u ∈ [0, 1]).
+  - Raggruppa intersezioni vicine arrotondando le coordinate a 1px.
+  - Tiene solo i gruppi con almeno 2 connessioni.
+- **Generazione rami:**
+  - Considera al massimo 30 intersezioni per contenere il numero di nuove linee.
+  - Le intersezioni vengono **mescolate in modo deterministico** prima di essere selezionate, per distribuire i rami su tutte le regioni generate e non solo sulle prime connessioni.
+  - Per ogni intersezione crea 1–2 rami deterministici:
+    - Direzione base = media normalizzata dei vettori delle connessioni incidenti (fallback (1,0)).
+    - Lunghezza = `diag * (0.06 + r * 0.06)` dove `diag = sqrt(w² + h²)` e `r` deriva dal seed.
+    - Offset angolare deterministico ±60°.
+    - Curvatura opzionale: `(rng - 0.5) * 0.7`, considerata curva se |curvature| > 0.08.
+    - Tratteggio deterministico con probabilità 35%.
+    - Punto finale clampato al canvas, `generationDepth = 1`, `generatedFrom = index intersezione`.
+- **Determinismo:** tutte le sorgenti aleatorie usano `seededRandom` con prefissi espliciti (`branching:count:length:angle:curvature:dashed`).
+- **Compatibilità:** lunghezze basate sulla diagonale assicurano proporzionalità su qualunque formato di canvas.
+
+## 8. Output finale
 
 La pipeline produce un array di curve quadratiche:
 

@@ -345,9 +345,11 @@ function inlineStylesRecursive(
 
     // Safety check: ensure tag names match (they should since we cloned)
     if (origChild.tagName !== clonedChild.tagName) {
-      console.warn(
-        `prepareSvgForExport: Tag name mismatch at index ${i}: ${origChild.tagName} vs ${clonedChild.tagName}`
-      );
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          `prepareSvgForExport: Tag name mismatch at index ${i}: ${origChild.tagName} vs ${clonedChild.tagName}`
+        );
+      }
       continue;
     }
 

@@ -85,7 +85,14 @@ export default function DebugOverlay({
   const DIRECTION_LINE_LENGTH = 30; // Length of direction indicator line
   const GAMMA_ROTATION_COLOR = "#ff8800"; // Orange
   const GAMMA_ROTATION_OPACITY = 0.6;
-  
+  const CLUSTER_AREA_STROKE_WIDTH = 1.5;
+  const CLUSTER_AREA_STROKE_OPACITY = 0.5;
+  const CLUSTER_AREA_FILL_OPACITY = 0.12;
+  const CLUSTER_AREA_START_POINT_RADIUS = 3;
+  const CLUSTER_AREA_LABEL_COLOR = "#ffffff";
+  const CLUSTER_AREA_LABEL_OPACITY = 0.9;
+  const CLUSTER_AREA_LABEL_FONT_SIZE = 11;
+
   // Helper function to convert angle (degrees) to point on circle
   const angleToPoint = (angleDeg: number, centerX: number, centerY: number, radius: number): Point => {
     const angleRad = (angleDeg * Math.PI) / 180;
@@ -110,6 +117,64 @@ export default function DebugOverlay({
         const gammaRotation = (gamma / 100) * 180;
         const finalClusterAngle = (clusterAngle + gammaRotation) % 180;
         return { clusterIndex: i, finalClusterAngle };
+      })
+    : [];
+
+  // Monotone chain convex hull (returns points in clockwise order, without duplicate last point)
+  const computeConvexHull = (points: Point[]): Point[] => {
+    if (points.length <= 1) return points;
+
+    const sorted = [...points].sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
+    const cross = (o: Point, a: Point, b: Point) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+
+    const lower: Point[] = [];
+    for (const p of sorted) {
+      while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+        lower.pop();
+      }
+      lower.push(p);
+    }
+
+    const upper: Point[] = [];
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const p = sorted[i];
+      while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+        upper.pop();
+      }
+      upper.push(p);
+    }
+
+    upper.pop();
+    lower.pop();
+    return lower.concat(upper);
+  };
+
+  const computeCentroid = (points: Point[]): Point => {
+    const { sumX, sumY } = points.reduce(
+      (acc, p) => ({ sumX: acc.sumX + p.x, sumY: acc.sumY + p.y }),
+      { sumX: 0, sumY: 0 }
+    );
+
+    return {
+      x: sumX / points.length,
+      y: sumY / points.length,
+    };
+  };
+
+  // Cluster areas built from dispersed start points
+  const clusterAreas = directionClusters && directionClusters.length > 0
+    ? Array.from(
+        directionClusters.reduce((acc, cluster) => {
+          if (!cluster.startPoint) return acc;
+          const existing = acc.get(cluster.clusterIndex) ?? [];
+          existing.push(cluster.startPoint);
+          acc.set(cluster.clusterIndex, existing);
+          return acc;
+        }, new Map<number, Point[]>())
+      ).map(([clusterIndex, points]) => {
+        const hull = points.length >= 3 ? computeConvexHull(points) : points;
+        const centroid = computeCentroid(points);
+        return { clusterIndex, points, hull, centroid };
       })
     : [];
 
@@ -255,6 +320,65 @@ export default function DebugOverlay({
       {/* Direction clustering visualization (patch03) */}
       {directionClusters && directionClusters.length > 0 && anchor && (
         <>
+          {/* Cluster areas from dispersed start points (shows where each cluster originates on canvas) */}
+          {clusterAreas.map(({ clusterIndex, points, hull, centroid }) => {
+            const clusterColorHue = (clusterIndex / (clusterCount || directionClusters.length || 3)) * 360;
+            const fillColor = `hsla(${clusterColorHue}, 70%, 60%, ${CLUSTER_AREA_FILL_OPACITY})`;
+            const strokeColor = `hsl(${clusterColorHue}, 70%, 55%)`;
+            const label = `Cluster ${clusterIndex + 1}`;
+
+            return (
+              <g key={`cluster-area-${clusterIndex}`}>
+                {hull.length >= 3 ? (
+                  <polygon
+                    points={hull.map((p) => `${p.x},${p.y}`).join(" ")}
+                    fill={fillColor}
+                    stroke={strokeColor}
+                    strokeWidth={CLUSTER_AREA_STROKE_WIDTH}
+                    opacity={CLUSTER_AREA_STROKE_OPACITY}
+                  />
+                ) : (
+                  hull.map((p, idx) => (
+                    <circle
+                      key={`cluster-area-point-${clusterIndex}-${idx}`}
+                      cx={p.x}
+                      cy={p.y}
+                      r={12}
+                      fill={fillColor}
+                      stroke={strokeColor}
+                      strokeWidth={CLUSTER_AREA_STROKE_WIDTH}
+                      opacity={CLUSTER_AREA_STROKE_OPACITY}
+                    />
+                  ))
+                )}
+
+                {points.map((p, idx) => (
+                  <circle
+                    key={`cluster-start-${clusterIndex}-${idx}`}
+                    cx={p.x}
+                    cy={p.y}
+                    r={CLUSTER_AREA_START_POINT_RADIUS}
+                    fill={strokeColor}
+                    opacity={0.9}
+                  />
+                ))}
+
+                <text
+                  x={centroid.x}
+                  y={centroid.y}
+                  fill={CLUSTER_AREA_LABEL_COLOR}
+                  fontSize={CLUSTER_AREA_LABEL_FONT_SIZE}
+                  opacity={CLUSTER_AREA_LABEL_OPACITY}
+                  textAnchor="middle"
+                  fontWeight="bold"
+                  fontFamily="monospace"
+                >
+                  {label}
+                </text>
+              </g>
+            );
+          })}
+
           {/* Cluster centers (before Gamma rotation) - shown as dashed lines */}
           {uniqueClusterCenters.map(({ clusterIndex, clusterAngle }) => {
             const startPoint = angleToPoint(clusterAngle, anchor.x, anchor.y, 10);

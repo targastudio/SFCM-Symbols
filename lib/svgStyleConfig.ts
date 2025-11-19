@@ -8,10 +8,9 @@
  * - Line stroke width
  * - Arrowhead dimensions
  * - Colors
+ *
+ * Canvas dimensions are resolved by lib/canvasSizeConfig.ts via resolveCanvasSize.
  */
-
-// Canvas dimensions
-export const CANVAS_SIZE = 1080; // px
 
 // Line styling
 export const BASE_STROKE_WIDTH = 3; // px

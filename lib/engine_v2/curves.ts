@@ -8,7 +8,7 @@
  * 
  * Gamma controls:
  * - Number of lines: 1-7 (see getNumberOfLines)
- * - Direction: 0° to 180° with clustering (see getLineDirection)
+ * - Direction: 0° to 180° with clustering (see getLineDirectionWithDebug)
  * - Length: 15% to 50% of canvas diagonal (see getLineLength)
  * 
  * Delta controls:
@@ -16,6 +16,7 @@
  */
 
 import type { AxesV2, Point, Quadrant, DirectionClusterDebug } from "../types";
+import { clampToCanvas } from "../svgUtils";
 import { prng, seededRandom } from "../seed";
 
 // Constants from ENGINE_V2_GEOMETRY_PIPELINE.md section 5
@@ -32,21 +33,6 @@ const DELTA_CURVATURE_JITTER_RANGE = 0.2; // ±20% jitter on curvature magnitude
 
 
 /**
- * Clamps a point to stay within exact canvas bounds
- */
-function clampToCanvas(
-  x: number,
-  y: number,
-  canvasWidth: number,
-  canvasHeight: number
-): Point {
-  return {
-    x: Math.max(0, Math.min(canvasWidth, x)),
-    y: Math.max(0, Math.min(canvasHeight, y)),
-  };
-}
-
-/**
  * Determines number of lines to generate from a point based on Gamma
  * 
  * Reference: docs/ENGINE_V2_GEOMETRY_PIPELINE.md section 3
@@ -58,7 +44,7 @@ function clampToCanvas(
  * - Gamma ≈ ±50  → lineCount ≈ 4
  * - Gamma ≈ ±100 → lineCount = 7
  */
-export function getNumberOfLines(gamma: number): number {
+function getNumberOfLines(gamma: number): number {
   const g = Math.abs(gamma); // [0, 100]
   const t = Math.min(1, g / 100); // [0, 1]
   const lineCount = NUM_LINES_MIN + Math.round(t * (NUM_LINES_MAX - NUM_LINES_MIN));
@@ -79,36 +65,10 @@ export function getNumberOfLines(gamma: number): number {
  * @param clusterSpread Spread angle within each cluster in degrees (default: 30)
  * @returns Direction angle in degrees [0, 180]
  */
-export function getLineDirection(
-  gamma: number,
-  seed: string,
-  lineIndex: number,
-  clusterCount: number = 3,
-  clusterSpread: number = 30
-): number {
-  // Determine which cluster this line belongs to
-  const clusterIndex = Math.floor(seededRandom(`${seed}:cluster:${lineIndex}`) * clusterCount);
-  
-  // Central angle of the cluster (distributed evenly across 0-180°)
-  const clusterAngle = (clusterIndex / clusterCount) * 180;
-  
-  // Gamma rotates all clusters
-  const gammaRotation = (gamma / 100) * 180;
-  
-  // Variation within the cluster
-  const inClusterJitter = (seededRandom(`${seed}:jitter:${lineIndex}`) - 0.5) * clusterSpread;
-  
-  // Final angle: cluster angle + gamma rotation + jitter, clamped to [0, 180]
-  const finalAngle = (clusterAngle + gammaRotation + inClusterJitter) % 180;
-  
-  // Ensure angle is in [0, 180] range
-  return Math.max(0, Math.min(180, finalAngle));
-}
-
 /**
  * Determines line direction with debug information (patch03)
- * 
- * Same as getLineDirection but also returns debug information for visualization.
+ *
+ * Restituisce sia l'angolo finale sia i dettagli di clustering utilizzati dal debug overlay.
  * 
  * @param gamma Gamma axis value [-100, +100]
  * @param seed Global seed for deterministic generation
@@ -117,7 +77,7 @@ export function getLineDirection(
  * @param clusterSpread Spread angle within each cluster in degrees (default: 30)
  * @returns Object with direction and debug information
  */
-export function getLineDirectionWithDebug(
+function getLineDirectionWithDebug(
   gamma: number,
   seed: string,
   lineIndex: number,
@@ -240,7 +200,7 @@ function computeCurvatureProfileMultiplier(
  * 
  * @param lengthScale Optional multiplier for line length (default: 1.0)
  */
-export function getLineLength(
+function getLineLength(
   gamma: number,
   canvasWidth: number,
   canvasHeight: number,
@@ -377,7 +337,7 @@ function generateDispersedStartPoint(
  * - Uses perpendicular offset from midpoint with deterministic jitter
  * - curvatureScale multiplies the final offset magnitude (0.3-1.7 range)
  */
-export function applyDeltaIrregularity(
+function applyDeltaIrregularity(
   delta: number,
   start: Point,
   end: Point,
@@ -544,6 +504,7 @@ export function generateCurveFromPoint(
     // Store debug information for this line, including profile multipliers
     directionClusters.push({
       ...directionDebug,
+      startPoint: dispersedStart,
       lengthProfile,
       curvatureProfile,
     });

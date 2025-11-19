@@ -24,7 +24,7 @@ export type CanvasSizeId =
   | "fit"
   | "custom";
 
-export const CANVAS_PRESETS = {
+const CANVAS_PRESETS = {
   square: { width: 1080, height: 1080 },
   "4_5": { width: 1080, height: 1350 },
   "9_16": { width: 1080, height: 1920 },

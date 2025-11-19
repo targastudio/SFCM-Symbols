@@ -75,16 +75,3 @@ export function getQuadrant(xNorm: number, yNorm: number): Quadrant {
   return 4; // bottom-right (x >= 0.5 && y >= 0.5)
 }
 
-/**
- * Maps Alfa/Beta axes directly to pixel coordinates
- * (convenience function that combines axesToNormalizedPosition + normalizedToPixel)
- */
-export function axesToPixelPosition(
-  axes: AxesV2,
-  canvasWidth: number,
-  canvasHeight: number
-): Point {
-  const { xNorm, yNorm } = axesToNormalizedPosition(axes);
-  return normalizedToPixel(xNorm, yNorm, canvasWidth, canvasHeight);
-}
-

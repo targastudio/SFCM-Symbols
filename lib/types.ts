@@ -12,11 +12,6 @@ export type Axes = {
   locale_globale: number;
 };
 
-export type KeywordVec = {
-  keyword: string;
-  axes: Axes;
-};
-
 export type Point = {
   x: number;
   y: number;
@@ -77,14 +72,6 @@ export type AxesV2 = {
 export type SemanticMapV2 = Record<string, AxesV2>;
 
 /**
- * Keyword with ENGINE_V2 axes
- */
-export type KeywordVecV2 = {
-  keyword: string;
-  axes: AxesV2;
-};
-
-/**
  * Quadrant identifier (1-4)
  * Quadrant 1: x > 0.5, y < 0.5 (top-right)
  * Quadrant 2: x < 0.5, y < 0.5 (top-left)
@@ -92,18 +79,6 @@ export type KeywordVecV2 = {
  * Quadrant 4: x > 0.5, y > 0.5 (bottom-right)
  */
 export type Quadrant = 1 | 2 | 3 | 4;
-
-/**
- * ENGINE_V2 curve definition (quadratic curve)
- */
-export type EngineV2Curve = {
-  start: Point;
-  control: Point;
-  end: Point;
-  keyword: string; // Original keyword that generated this curve
-  quadrant: Quadrant; // Which quadrant this curve belongs to
-  isMirrored: boolean; // Whether this is a mirrored copy
-};
 
 /**
  * Per-keyword anchor point debug information
@@ -142,6 +117,7 @@ export type DirectionClusterDebug = {
   finalClusterAngle: number; // Cluster angle after Gamma rotation in degrees
   inClusterJitter: number; // Jitter applied within the cluster in degrees
   finalDirection: number; // Final direction of the line (0-180°) in degrees
+  startPoint: Point; // Dispersed start point for this line on the canvas (per-cluster positioning)
   // patch04: optional per-line length/curvature profile multipliers
   lengthProfile?: number;
   curvatureProfile?: number;
