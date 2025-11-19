@@ -18,15 +18,23 @@
  * Reference: docs/patches/patch01_SPEC_03_mirroring_revision.md for mirroring revision
  */
 
-import type { AxesV2, BranchedConnection, EngineV2DebugInfo, KeywordAnchorDebug, Point } from "../types";
+import type {
+  AxesV2,
+  BranchedConnection,
+  EngineV2DebugInfo,
+  GeometryBoundingBox,
+  KeywordAnchorDebug,
+  Point,
+} from "../types";
 import {
   getAxesForKeywordV2,
   getSemanticMapV2,
 } from "./axes";
 import { axesToNormalizedPosition, normalizedToPixel, getQuadrant } from "./position";
 import { generateCurveFromPoint } from "./curves";
-import { applyFinalMirroring, computeMirroringDebugInfo } from "./finalMirroring";
+import { applyFinalMirroring, computeMirroringDebugInfo, computeBoundingBox } from "./finalMirroring";
 import { applyBranching } from "./branching";
+import { rotateConnectionsClockwise, shouldRotateGeometry } from "./geometryRotation";
 
 /**
  * ENGINE_V2 options type
@@ -38,6 +46,7 @@ type EngineV2Options = {
   curvatureScale?: number; // Multiplier for curve intensity (default: 1.0)
   clusterCount?: number; // Number of direction clusters (default: 3)
   clusterSpread?: number; // Spread angle within each cluster in degrees (default: 30)
+  forceOrientation?: boolean; // Feature3 toggle for geometry rotation
 };
 
 /**
@@ -131,6 +140,7 @@ export async function generateEngineV2(
   const curvatureScale = options.curvatureScale ?? 1.0;
   const clusterCount = options.clusterCount ?? 3;
   const clusterSpread = options.clusterSpread ?? 30;
+  const forceOrientation = options.forceOrientation ?? false;
   if (keywords.length === 0) {
     return { connections: [] };
   }
@@ -228,6 +238,12 @@ export async function generateEngineV2(
   // Reference: docs/ENGINE_V2_GEOMETRY_PIPELINE.md section 8
   const connections = allCurves.map(curveToBranchedConnection);
 
+  const preMirroringBbox: GeometryBoundingBox | null = computeBoundingBox(
+    connections,
+    canvasWidth,
+    canvasHeight
+  );
+
   // Capture mirroring debug info BEFORE applying mirroring
   // This captures the bbox and axis of the pre-mirroring geometry
   const mirroringDebugInfo = includeDebug
@@ -247,6 +263,11 @@ export async function generateEngineV2(
     canvasHeight,
     seed
   );
+
+  const rotationApplied = shouldRotateGeometry(forceOrientation, preMirroringBbox);
+  const rotatedConnections = rotationApplied
+    ? rotateConnectionsClockwise(branchedConnections, canvasWidth, canvasHeight)
+    : branchedConnections;
 
   // Capture debug info (anchor point BEFORE mirroring, plus mirroring info, plus clustering debug)
   const debug: EngineV2DebugInfo | undefined = includeDebug && basePoints.length > 0
@@ -270,11 +291,13 @@ export async function generateEngineV2(
         clusterCount,
         clusterSpread,
         gamma: keywordVectors[0].axes.gamma, // Use first keyword's gamma value
+        forceOrientationEnabled: forceOrientation,
+        forceOrientationApplied: rotationApplied,
       }
     : undefined;
 
   return {
-    connections: branchedConnections,
+    connections: rotatedConnections,
     debug,
   };
 }

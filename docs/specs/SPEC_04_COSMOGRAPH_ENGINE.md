@@ -2,7 +2,7 @@
 ## Sistema di Generazione Simboli Cosmopolitici
 
 **Versione**: 4.0  
-**Data**: 2025-01-19  
+**Data**: 2025-11-19  
 **Status**: Living Document  
 **Sostituisce**: SPEC_03 + Patch01-04 + Branching_beta01
 
@@ -36,6 +36,7 @@ La sequenza deriva dall'orchestrazione in `generateEngineV2` e integra mirroring
 | Direzioni | Gamma → angolo continuo ±45° | Gamma ruota cluster discreti 0°-180° con jitter configurabile, pilotati da slider `clusterCount`/`clusterSpread` (`lib/engine_v2/curves.ts:80-127` e `app/page.tsx:194-221`). |
 | Lunghezze/curvature | Uniformi salvo jitter globale | Profili discreti per linea con correlazione inversa e slider globali `lengthScale`/`curvatureScale` (`lib/engine_v2/curves.ts:473-536` e `app/page.tsx:194-208`). |
 | Branching | Non presente | Nuovi rami da intersezioni post-mirroring con hard cap 30 intersezioni e 1–2 rami deterministici ciascuna (`lib/engine_v2/branching.ts:127-197`). |
+| Force Orientation | Non presente | Toggle UI opzionale che ruota tutta la geometria di 90° clockwise se il bbox pre-mirroring è più alto che largo, applicato dopo branching (`lib/engine_v2/geometryRotation.ts`). |
 
 ### 1.4 Garanzie del sistema
 - Determinismo end-to-end: seed basato su keywords + dimensioni canvas via `cyrb53`, nessun slider influisce sul seed (`app/page.tsx:150-207`).
@@ -146,6 +147,22 @@ sequenceDiagram
 **Implementazione**: `applyBranching` ritorna `generationDepth = 1` per i rami (`lib/engine_v2/branching.ts:184-191`).  
 **Introdotta in**: Branching_beta01 (`docs/changes/CHANGELOG_SFCM_SYMBOLS.md:9-27`).
 
+### 3.9 Optional Step: Force Orientation Rotation
+**Scopo**: allineare automaticamente simboli molto verticali ruotandoli di 90° clockwise.
+
+**Condizione di attivazione**:
+- Toggle UI **Force Orientation** impostato su ON.
+- Bounding box della geometria pre-mirroring (curve generate prima dello step 5) con `height > width`.
+
+**Algoritmo**:
+1. Calcola il bbox usando `computeBoundingBox` in `lib/engine_v2/finalMirroring.ts` subito dopo la conversione a `BranchedConnection`.
+2. Dopo il branching applica `rotateConnectionsClockwise` (`lib/engine_v2/geometryRotation.ts`) su tutte le connessioni.
+3. Rotazione 90° clockwise attorno al centro canvas `(cx, cy)` usando `(x', y') = (cx + (y - cy), cy - (x - cx))`.
+
+**Output**: array `BranchedConnection[]` ruotato, con `generationDepth` e metadati invariati.
+
+**Determinismo**: la decisione dipende solo da toggle + bbox deterministico → stessi input ⇒ stessa rotazione.
+
 ---
 
 ## 4. CONTROL INTERFACE
@@ -157,6 +174,7 @@ sequenceDiagram
 | Slider2 | "Curvatura linee" | 0–100 | `curvatureScale` | `0.3 + (s/100) * 1.4` (`app/page.tsx:202-208`) | 50 → 1.0 |
 | Slider3 | "Numero Cluster" | 0–100 | `clusterCount` | `round(2 + (s/100)*3)` (`app/page.tsx:209-215`) | 33 → 3 |
 | Slider4 | "Ampiezza Cluster" | 0–100 | `clusterSpread` | `10 + (s/100)*50` (`app/page.tsx:216-221`) | 40 → 30° |
+| Force Orientation | Checkbox | on/off | `forceOrientation` | Rotazione 90° clockwise post-branching se bbox pre-mirroring ha height > width (`app/page.tsx`, `lib/engine_v2/engine.ts`) | off |
 
 ### 4.2 Slider Interaction Matrix
 | Slider | Step impattato | Effetto |
@@ -171,6 +189,7 @@ sequenceDiagram
 - `curvatureScale` ∈ [0.3, 1.7], default 1.0 (`app/page.tsx:202-208`).
 - `clusterCount` ∈ [2, 5], default 3 (`app/page.tsx:209-215`).
 - `clusterSpread` ∈ [10°, 60°], default 30° (`app/page.tsx:216-221`).
+- `forceOrientation` ∈ {false, true}, default false (`app/page.tsx`).
 
 ---
 
@@ -198,6 +217,7 @@ sequenceDiagram
 ### 5.2 Determinism Contract
 - Seed globale = `cyrb53(keywords.join(",") + "-" + width + "-" + height)` (`app/page.tsx:154-201`).
 - Nessun parametro UI altera il seed; gli slider agiscono come moltiplicatori nel pipeline (`app/page.tsx:194-221`).
+- Force Orientation opera solo su geometria già deterministica e usa il bbox pre-mirroring (`lib/engine_v2/geometryRotation.ts`).
 - Tutti gli effetti random sono clamped e riproducibili grazie a `seedrandom` (`lib/seed.ts:1-40`).
 
 ### 5.3 Testing Determinism

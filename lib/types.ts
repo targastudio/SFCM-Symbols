@@ -17,6 +17,13 @@ export type Point = {
   y: number;
 };
 
+export type GeometryBoundingBox = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+};
+
 export type ClusterPoint = Point & {
   isPrimary: boolean;
 };
@@ -128,7 +135,7 @@ export type EngineV2DebugInfo = {
   beta: number;
   anchor: Point; // Primary anchor point (Alfa/Beta → canvas coordinates) BEFORE mirroring
   anchors?: KeywordAnchorDebug[]; // Per-keyword anchor points (all keywords' primary positions) BEFORE mirroring
-  bbox?: { minX: number; minY: number; maxX: number; maxY: number }; // Bounding box of pre-mirroring geometry
+  bbox?: GeometryBoundingBox; // Bounding box of pre-mirroring geometry
   mirrorAxisType?: "vertical" | "horizontal" | "diagonal"; // Type of mirroring axis
   mirrorAxisSegment?: { x1: number; y1: number; x2: number; y2: number }; // Axis line segment for visualization
   // Direction clustering debug (patch03)
@@ -136,4 +143,7 @@ export type EngineV2DebugInfo = {
   clusterCount?: number; // Number of clusters used
   clusterSpread?: number; // Spread angle within clusters in degrees
   gamma?: number; // Gamma value used for rotation
+  // Feature3: Force Orientation telemetry
+  forceOrientationEnabled?: boolean;
+  forceOrientationApplied?: boolean;
 };

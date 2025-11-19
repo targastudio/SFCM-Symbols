@@ -9,6 +9,18 @@ Entries are listed in reverse chronological order (most recent first).
 
 ---
 
+## 2025-03-XX – FEATURE: Force Orientation (Feature3)
+
+### Rotazione 90° condizionata dal bbox
+
+- **Toggle UI**: aggiunto checkbox "Force Orientation" nel pannello controlli (`app/page.tsx`) per consentire all'utente di imporre la rotazione della geometria.
+- **Condizione**: la rotazione scatta solo quando il bounding box della geometria pre-mirroring ha `height > width`, informazione calcolata subito dopo la generazione delle curve.
+- **Pipeline**: introdotto `lib/engine_v2/geometryRotation.ts` che valuta la condizione (`shouldRotateGeometry`) e, se vera, ruota tutte le `BranchedConnection` di 90° clockwise attorno al centro canvas dopo lo step di branching.
+- **Determinismo**: nessun nuovo seed; il toggle agisce solo sulla geometria già deterministica e viene tracciato nel `EngineV2DebugInfo`.
+- **Documentazione**: nuova reference `docs/reference/features/feature3_geometry_rotation.md`, aggiornati SPEC_04 e README per elencare il toggle.
+
+**Files principali:** `app/page.tsx`, `lib/engine_v2/engine.ts`, `lib/engine_v2/geometryRotation.ts`, `lib/types.ts`, `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`, `docs/reference/features/feature3_geometry_rotation.md`.
+
 ## 2025-02-XX – FEATURE: Branching_beta01 (ENGINE_V2)
 
 ### Branching dalle intersezioni post-mirroring

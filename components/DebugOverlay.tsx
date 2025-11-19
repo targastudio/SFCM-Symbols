@@ -10,14 +10,19 @@
  * Reference: docs/debug/ENGINE_V2_DEBUG_OVERLAY.md
  */
 
-import type { KeywordAnchorDebug, Point, DirectionClusterDebug } from "../lib/types";
+import type {
+  KeywordAnchorDebug,
+  Point,
+  DirectionClusterDebug,
+  GeometryBoundingBox,
+} from "../lib/types";
 
 type DebugOverlayProps = {
   width: number;
   height: number;
   anchor?: Point;
   anchors?: KeywordAnchorDebug[];
-  bbox?: { minX: number; minY: number; maxX: number; maxY: number };
+  bbox?: GeometryBoundingBox;
   mirrorAxisSegment?: { x1: number; y1: number; x2: number; y2: number };
   // Direction clustering debug (patch03)
   directionClusters?: DirectionClusterDebug[];

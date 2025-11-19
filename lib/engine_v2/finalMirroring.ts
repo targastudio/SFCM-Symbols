@@ -19,7 +19,7 @@
  * The actual axis position is always centered on the canvas (canvasWidth/2, canvasHeight/2).
  */
 
-import type { BranchedConnection, Point } from "../types";
+import type { BranchedConnection, GeometryBoundingBox, Point } from "../types";
 import { computeCurveControl } from "../svgUtils";
 
 
@@ -27,11 +27,11 @@ import { computeCurveControl } from "../svgUtils";
  * Computes bounding box from all points in connections
  * Returns { minX, minY, maxX, maxY } or null if no connections
  */
-function computeBoundingBox(
+export function computeBoundingBox(
   connections: BranchedConnection[],
   canvasWidth: number,
   canvasHeight: number
-): { minX: number; minY: number; maxX: number; maxY: number } | null {
+): GeometryBoundingBox | null {
   if (connections.length === 0) {
     return null;
   }
@@ -78,7 +78,7 @@ function computeBoundingBox(
  * Returns axis type: 'vertical' | 'horizontal' | 'diagonal'
  */
 function determineAxis(
-  bbox: { minX: number; minY: number; maxX: number; maxY: number }
+  bbox: GeometryBoundingBox
 ): 'vertical' | 'horizontal' | 'diagonal' {
   const width = bbox.maxX - bbox.minX;
   const height = bbox.maxY - bbox.minY;
@@ -208,7 +208,7 @@ export function computeMirroringDebugInfo(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _seed: string
 ): {
-  bbox: { minX: number; minY: number; maxX: number; maxY: number };
+  bbox: GeometryBoundingBox;
   mirrorAxisType: "vertical" | "horizontal" | "diagonal";
   mirrorAxisSegment: { x1: number; y1: number; x2: number; y2: number };
 } | null {

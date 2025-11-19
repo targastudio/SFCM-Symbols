@@ -29,6 +29,8 @@ export default function Home() {
   const [clusterCountSlider, setClusterCountSlider] = useState(33);
   // Slider4: "Ampiezza Cluster" - controls clusterSpread in ENGINE_V2 (0-100, default 40 → clusterSpread = 30)
   const [clusterSpreadSlider, setClusterSpreadSlider] = useState(40);
+  // Force Orientation toggle (Feature3)
+  const [forceOrientation, setForceOrientation] = useState(false);
   // Placeholder sliders (ENGINE_V2 placeholders - no effect on generation yet)
   // NOTE: These sliders are kept in the UI for future mapping according to ENGINE_V2_SLIDER_MAPPING.md.
   const [complessita, setComplessita] = useState(0.5);
@@ -228,7 +230,7 @@ export default function Home() {
         canvasWidth,
         canvasHeight,
         debugMode,
-        { lengthScale, curvatureScale, clusterCount, clusterSpread }
+        { lengthScale, curvatureScale, clusterCount, clusterSpread, forceOrientation }
       );
 
       // CRITICAL: Reset animation state BEFORE setting new connections
@@ -402,6 +404,29 @@ export default function Home() {
                 onChange={(e) => setClusterSpreadSlider(parseInt(e.target.value, 10))}
                 style={{ width: "100%" }}
               />
+            </div>
+
+            {/* Force Orientation toggle */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.25rem",
+                paddingTop: "0.75rem",
+                borderTop: "1px solid #333",
+              }}
+            >
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem" }}>
+                <input
+                  type="checkbox"
+                  checked={forceOrientation}
+                  onChange={(e) => setForceOrientation(e.target.checked)}
+                />
+                Force Orientation
+              </label>
+              <span style={{ fontSize: "0.85rem", color: "#bbb" }}>
+                Ruota di 90° clockwise se il bounding box pre-mirroring è più alto che largo.
+              </span>
             </div>
 
             {/* Placeholder sliders (ENGINE_V2 placeholders - no effect on generation yet) */}
