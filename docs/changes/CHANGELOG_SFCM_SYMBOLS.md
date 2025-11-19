@@ -9,7 +9,118 @@ Entries are listed in reverse chronological order (most recent first).
 
 ---
 
-## 2025-03-XX – FEATURE: Force Orientation (Feature3)
+## 2025-11-XX – FIX: Animation Loop continuous flow
+
+### Change from back-and-forth to continuous flowing generation
+
+- **Loop behavior:** Changed animation loop from forward → pause → reverse to forward → pause → forward-vanishing. The vanishing phase retracts lines from origin toward arrowhead (same direction as growth), with arrowhead remaining visible until fully retracted, creating a continuous flowing effect instead of back-and-forth motion.
+- **Phase implementation:** `app/page.tsx` now implements three phases: forward (0 → 1), pause (hold at 1), and forward-vanishing (1 → 0). The vanishing phase uses the same duration as the forward phase (1.8 s) for consistent timing.
+- **Arrowhead + dash rendering:** `components/SvgPreview.tsx` now renders arrowheads as explicit geometry that follows the animated stroke tip from frame zero, rotating along the local tangent, and keeps dashed styling visible throughout the animation by masking the fully styled stroke instead of swapping dash arrays at 100%. `lib/prepareSvgForExport.ts` realigns those dynamic arrowheads and strips the preview masks before serialization so downloads always show the fully drawn symbol without animation artifacts.
+- **Documentation:** Updated `docs/specs/features/Animation_Loop.md` to describe the three-phase continuous flow behavior and arrowhead visibility during vanishing.
+
+**Files modified:** `app/page.tsx`, `components/SvgPreview.tsx`, `lib/prepareSvgForExport.ts`, `docs/specs/features/Animation_Loop.md`.
+
+---
+
+## 2025-11-XX – FEATURE: Animation Loop pulse cycle
+
+### Deterministic forward/pause/reverse loop
+
+- **Loop controller:** `app/page.tsx` introduces `ANIMATION_LOOP_CONFIG` (1.8 s forward, 0.42 s pause, 1.8 s reverse) and a dedicated effect that drives `animationProgress` through the forward → pause → reverse phases via a single shared `requestAnimationFrame` timeline. Manual renders clear the canvas before restarting the loop, while slider-driven renders still rely on `skipAnimationForNextRenderRef` so real-time preview stays static.
+- **Synchronized rendering:** `components/SvgPreview.tsx` now consumes the global `animationProgress` across every connection, removing the previous staggered windows. Stroke easing remains per connection, but all lines grow and retract in unison for the pulsing effect.
+- **Documentation:** Updated `docs/specs/features/Animation_Loop.md` and `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md` to describe the timeline, determinism guarantees, and interop with real-time preview.
+
+**Files modified:** `app/page.tsx`, `components/SvgPreview.tsx`, `docs/specs/features/Animation_Loop.md`, `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
+
+---
+
+## 2025-11-XX – FEATURE: Real-Time Generation preview
+
+### Slider drag regeneration & telemetry
+
+- **UI scheduling:** `app/page.tsx` now routes slider/toggle changes through `scheduleRealtimeGeneration`, throttling updates at ~60 Hz, cancelling stale renders, and logging throttle hits + skips. Pointer listeners fire a final authoritative render on pointer up, while a new “Anteprima real-time” toggle (flagged by `NEXT_PUBLIC_REAL_TIME_GENERATION`) exposes the feature to users with a live status pill.
+- **Engine contract:** `generateSymbolFromCurrentState` accepts trigger reasons, drops stale results and enriches `EngineV2Result.debug` with `realtimeGeneration` telemetry. Manual runs keep presenting alerts, real-time runs stay silent but still mark determinism counters.
+- **Telemetry surface:** `EngineV2DebugInfo` gains `realtimeGeneration` (duration/throttle/skip), surfaced in `components/DebugOverlay.tsx` on top of the canvas.
+- **Feature flag & docs:** Added `lib/featureFlags.ts`, updated SPEC_04 control interface (Section 4.4), README index, and the dedicated feature spec with manual QA steps + acceptance checklist.
+
+**Files modified:** `app/page.tsx`, `lib/featureFlags.ts`, `lib/types.ts`, `components/DebugOverlay.tsx`, `components/SvgPreview.tsx`, documentation set.
+
+---
+
+## 2025-11-XX – BUGFIX: Real-Time preview animation glitches
+
+### Stop animation resets during slider drags
+
+- **Behavior fix:** Real-time slider drags now bypass the stroke animation to avoid restarts and blank frames. `skipAnimationForNextRenderRef` flags the next render as static, while manual generations still use the staged double `requestAnimationFrame`.
+- **UI stability:** Realtime renders no longer clear the connections array before applying the new geometry, eliminating the visible flicker of the preview panel whenever a slider moves.
+- **Docs:** Updated Real_Time_Generation spec (implementation notes + QA expectations) and SPEC_04 §4.4 to describe the animation interop.
+
+**Files modified:** `app/page.tsx`, `docs/specs/features/Real_Time_Generation.md`, `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
+
+---
+
+## 2025-XX-XX – REMOVED: Placeholder sliders "Complessità" and "Mutamento"
+
+### Permanently remove unused placeholder sliders
+
+- **UI changes:** Removed the "Complessità" and "Mutamento" slider controls and their state variables from `app/page.tsx`. These sliders were placeholders with no effect on generation.
+- **State cleanup:** Removed state variables `complessita` and `mutamento` and their setter functions.
+- **Code cleanup:** Removed placeholder slider UI components and related comments.
+
+**Files modified:** `app/page.tsx`.
+
+---
+
+## 2025-XX-XX – TEMP: Canvas size options disabled
+
+### Temporarily disable canvas size selector UI - only 1:1 (square) active
+
+- **UI changes:** Removed the canvas size selector UI (radio buttons for 1:1, 4:5, 9:16, 16:9, fit, custom) and custom size inputs from the controls panel (`app/page.tsx`). All canvas size state variables have been removed.
+- **Engine changes:** Canvas size hardcoded to `"square"` (1:1, 1080×1080) when calling `resolveCanvasSize`. All `resolveCanvasSize` calls now use the hardcoded value.
+- **State cleanup:** Removed state variables `canvasSizeId`, `customWidth`, `customHeight`, `viewportWidth`, `viewportHeight` and related `useEffect` hooks for viewport sizing and auto-regeneration on canvas size change.
+- **Backend code:** All canvas size configuration code remains intact in `lib/canvasSizeConfig.ts` for potential future use.
+- **Documentation:** Updated `docs/reference/features/feature1_canvas_size.md` to reflect temporary disable status.
+
+**Files modified:** `app/page.tsx`, `docs/reference/features/feature1_canvas_size.md`.
+
+---
+
+## 2025-11-19 – TEMP: Origin Bridges feature disabled
+
+### Temporarily disable Origin Bridges UI and feature
+
+- **UI changes:** Removed the "Bridges" checkbox and description from the controls panel (`app/page.tsx`). The feature toggle state variable has been removed.
+- **Engine changes:** Feature hardcoded to `false` when calling `generateEngineV2`. Engine default changed from `true` to `false` for safety (`lib/engine_v2/engine.ts`).
+- **Backend code:** All Origin Bridges implementation code remains intact in `lib/engine_v2/originBridges.ts` for potential future use.
+- **Documentation:** Updated `docs/reference/features/feature4_origin_bridges.md` and `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md` to reflect temporary disable status.
+
+**Files modified:** `app/page.tsx`, `lib/engine_v2/engine.ts`, `docs/reference/features/feature4_origin_bridges.md`, `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
+
+---
+
+## 2025-11-19 – PATCH05: Animation dash rebuild
+
+### PATCH05 – Accurate stroke lengths for preview animation
+
+- **Bugfix scope:** resolved the preview flicker where dashed branches appeared before the animation started and lines jumped directly to the final state.
+- **Rendering changes:**
+  - `components/SvgPreview.tsx` now pre-computes geometry metadata (line lengths and quadratic Bézier approximations) for each `BranchedConnection`.
+  - Stroke animation uses the real path length as `strokeDasharray`, ensuring that staggered windows and easing progress reveal every line gradually.
+  - Dashed branches keep their dotted pattern only after the animation completes or when animation is disabled, preventing early flicker.
+- **Documentation:** Added `docs/proposals/patch_05_Animation_fix.md` and updated `PATCHES_INDEX.md` to track the change.
+
+## 2025-11-19 – FEATURE: Origin Bridges (Feature4)
+
+### Rete tratteggiata tra le keyword anchors
+
+- **UI toggle**: aggiunto checkbox **Bridges** (default ON) nel pannello controlli (`app/page.tsx`). Il flag viene propagato come `originBridgesEnabled` nelle `EngineV2Options` senza influire sul seed.
+- **Nuovo step 3.5**: `generateEngineV2` costruisce `BranchedConnection` lineari e tratteggiati collegando ogni coppia di anchor `basePoints`. Le connessioni hanno `generationDepth = 0`, `curved = false`, `curvature = 0`, condividono colore/spessore con le linee principali e attraversano mirroring, branching e Force Orientation senza special case (`lib/engine_v2/originBridges.ts`, `lib/engine_v2/engine.ts`).
+- **Debug info**: `EngineV2DebugInfo` espone `originBridgesEnabled` e `originBridgesCount` per l'overlay (`lib/types.ts`).
+- **Documentazione**: nuova reference `docs/reference/features/feature4_origin_bridges.md`, SPEC_04 aggiornato (diagramma pipeline, Step 3.5, tabella controlli, sezione determinismo) e README/changelog sincronizzati (`docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`, `docs/README.md`, `docs/reference/engine_v2/ENGINE_V2_GEOMETRY_PIPELINE.md`).
+
+**File principali:** `app/page.tsx`, `lib/engine_v2/engine.ts`, `lib/engine_v2/originBridges.ts`, `lib/types.ts`, `docs/reference/features/feature4_origin_bridges.md`, `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`.
+
+## 2025-11-19 – FEATURE: Force Orientation (Feature3)
 
 ### Rotazione 90° condizionata dal bbox
 
@@ -21,7 +132,7 @@ Entries are listed in reverse chronological order (most recent first).
 
 **Files principali:** `app/page.tsx`, `lib/engine_v2/engine.ts`, `lib/engine_v2/geometryRotation.ts`, `lib/types.ts`, `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`, `docs/reference/features/feature3_geometry_rotation.md`.
 
-## 2025-02-XX – FEATURE: Branching_beta01 (ENGINE_V2)
+## 2025-11-19 – FEATURE: Branching_beta01 (ENGINE_V2)
 
 ### Branching dalle intersezioni post-mirroring
 

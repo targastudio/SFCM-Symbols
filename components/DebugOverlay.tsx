@@ -15,6 +15,7 @@ import type {
   Point,
   DirectionClusterDebug,
   GeometryBoundingBox,
+  RealtimeGenerationDebug,
 } from "../lib/types";
 
 type DebugOverlayProps = {
@@ -29,6 +30,7 @@ type DebugOverlayProps = {
   clusterCount?: number;
   clusterSpread?: number;
   gamma?: number;
+  realtimeGeneration?: RealtimeGenerationDebug;
 };
 
 export default function DebugOverlay({
@@ -42,6 +44,7 @@ export default function DebugOverlay({
   clusterCount,
   clusterSpread,
   gamma,
+  realtimeGeneration,
 }: DebugOverlayProps) {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -97,6 +100,9 @@ export default function DebugOverlay({
   const CLUSTER_AREA_LABEL_COLOR = "#ffffff";
   const CLUSTER_AREA_LABEL_OPACITY = 0.9;
   const CLUSTER_AREA_LABEL_FONT_SIZE = 11;
+  const REALTIME_INFO_COLOR = "#00ffff";
+  const REALTIME_INFO_FONT_SIZE = 12;
+  const REALTIME_INFO_OPACITY = 0.85;
 
   // Helper function to convert angle (degrees) to point on circle
   const angleToPoint = (angleDeg: number, centerX: number, centerY: number, radius: number): Point => {
@@ -461,7 +467,7 @@ export default function DebugOverlay({
           })}
           
           {/* Gamma rotation indicator - arc showing rotation */}
-          {gamma !== undefined && anchor && (
+      {gamma !== undefined && anchor && (
             <>
               <text
                 x={anchor.x + 60}
@@ -489,7 +495,33 @@ export default function DebugOverlay({
           )}
         </>
       )}
+
+      {/* Real-Time Generation telemetry (if available) */}
+      {realtimeGeneration && (
+        <text
+          x={16}
+          y={24}
+          fill={REALTIME_INFO_COLOR}
+          fontSize={REALTIME_INFO_FONT_SIZE}
+          opacity={REALTIME_INFO_OPACITY}
+          fontFamily="monospace"
+        >
+          <tspan x={16} dy="0">
+            RT: {realtimeGeneration.enabled ? "on" : "off"} · Trigger: {realtimeGeneration.lastTrigger ?? "-"}
+          </tspan>
+          {(realtimeGeneration.durationMs !== undefined ||
+            realtimeGeneration.throttleHits !== undefined ||
+            realtimeGeneration.skippedRenders !== undefined) && (
+            <tspan x={16} dy="16">
+              {realtimeGeneration.durationMs !== undefined
+                ? `${realtimeGeneration.durationMs.toFixed(1)}ms`
+                : "n/d"}{" "}
+              · throttle {realtimeGeneration.throttleHits ?? 0} · skipped{" "}
+              {realtimeGeneration.skippedRenders ?? 0}
+            </tspan>
+          )}
+        </text>
+      )}
     </g>
   );
 }
-

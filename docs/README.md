@@ -59,6 +59,8 @@ Documentazione delle feature specifiche:
 - `feature1_canvas_size.md` — Sistema di dimensioni canvas (1:1, 4:5, 9:16, 16:9, fit, custom)
 - `feature_branching_beta01.md` — Step Branching_beta01 post-mirroring
 - `feature3_geometry_rotation.md` — Force Orientation (rotazione 90° su bbox alto)
+- `feature4_origin_bridges.md` — Rete di linee tratteggiate che collega le ancore keyword (Feature4)
+- `specs/features/Real_Time_Generation.md` — Loop di rigenerazione in tempo reale con throttle, flag e telemetria
 
 Quando si aggiungono nuove feature, usare la guida dedicata (vedi sezione "🧪 Guides").
 

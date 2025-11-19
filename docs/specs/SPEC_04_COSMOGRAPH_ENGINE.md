@@ -19,7 +19,8 @@ flowchart LR
   A[Keyword list] --> B[Step 1<br/>Semantic axes]
   B --> C[Step 2<br/>Base position]
   C --> D[Step 3<br/>Point dispersion]
-  D --> E[Step 4<br/>Direction clustering]
+  D --> CB[Step 3.5<br/>Origin Bridges]
+  CB --> E[Step 4<br/>Direction clustering]
   E --> F[Step 5<br/>Length profiles]
   F --> G[Step 6<br/>Curvature profiles]
   G --> H[Step 7<br/>Final mirroring]
@@ -37,6 +38,7 @@ La sequenza deriva dall'orchestrazione in `generateEngineV2` e integra mirroring
 | Lunghezze/curvature | Uniformi salvo jitter globale | Profili discreti per linea con correlazione inversa e slider globali `lengthScale`/`curvatureScale` (`lib/engine_v2/curves.ts:473-536` e `app/page.tsx:194-208`). |
 | Branching | Non presente | Nuovi rami da intersezioni post-mirroring con hard cap 30 intersezioni e 1–2 rami deterministici ciascuna (`lib/engine_v2/branching.ts:127-197`). |
 | Force Orientation | Non presente | Toggle UI opzionale che ruota tutta la geometria di 90° clockwise se il bbox pre-mirroring è più alto che largo, applicato dopo branching (`lib/engine_v2/geometryRotation.ts`). |
+| Origin Bridges | Non presente | Nuovo step 3.5 che collega tutte le ancore keyword con linee tratteggiate `generationDepth = 0`, controllato da toggle UI "Bridges" e inserito prima della conversione a `BranchedConnection`. |
 
 ### 1.4 Garanzie del sistema
 - Determinismo end-to-end: seed basato su keywords + dimensioni canvas via `cyrb53`, nessun slider influisce sul seed (`app/page.tsx:150-207`).
@@ -101,15 +103,22 @@ sequenceDiagram
 **Implementazione**: `axesToNormalizedPosition`, `normalizedToPixel`, `getQuadrant`. 
 
 ### 3.3 Step 3: Point Dispersion
-**Scopo**: evitare raggi stellari sovrapposti.  
+**Scopo**: evitare raggi stellari sovrapposti.
 **Algoritmo**: prima linea usa l'ancora, le successive estraggono un punto in un cerchio di raggio `0.02 * diagonale` con distribuzione uniforme sull'area (`lib/engine_v2/curves.ts:445-460`).
-**Parametri**: `dispersionRadius = 0.02` (2% diagonale) (`lib/engine_v2/curves.ts:245-325`).  
-**Seed prefixes**: `'${seed}:disperse:${pointIndex}:${lineIndex}'` per angolo e distanza (`lib/engine_v2/curves.ts:291-309`).  
-**Implementazione**: `generateDispersedStartPoint` clampato al canvas.  
+**Parametri**: `dispersionRadius = 0.02` (2% diagonale) (`lib/engine_v2/curves.ts:245-325`).
+**Seed prefixes**: `'${seed}:disperse:${pointIndex}:${lineIndex}'` per angolo e distanza (`lib/engine_v2/curves.ts:291-309`).
+**Implementazione**: `generateDispersedStartPoint` clampato al canvas.
 **Introdotta in**: patch02, come documentato nel changelog (`docs/changes/CHANGELOG_SFCM_SYMBOLS.md:155-189`).
 
+### 3.35 Step 3.5: Origin Bridges (Feature4)
+**Scopo**: collegare tutte le ancore Alfa/Beta tra loro con linee tratteggiate per mostrare la rete semantica condivisa dalle keyword.
+**Algoritmo**: dato l'array ordinato degli anchor point (`basePoints`), viene costruito il grafo completo combinando ogni coppia `i<j` in un `BranchedConnection` rettilineo (`curved = false`, `curvature = 0`, `dashed = true`, `generationDepth = 0`).
+**Seed prefixes**: nessuno; il comportamento dipende solo dall'ordine deterministico delle keyword e dalle coordinate ancore già clampate.
+**Implementazione**: `generateOriginBridges` in `lib/engine_v2/originBridges.ts`, invocato in `generateEngineV2` dopo Point Dispersion e prima della conversione a `BranchedConnection` (`lib/engine_v2/engine.ts:174-210`).
+**Toggle UI**: checkbox **Bridges** (default ON) in `app/page.tsx` abilita/disabilita lo step propagando `originBridgesEnabled` nelle `EngineV2Options`.
+
 ### 3.4 Step 4: Line Generation with Direction Clustering
-**Scopo**: distribuire direzioni in cluster equidistanti e ruotati da Gamma.  
+**Scopo**: distribuire direzioni in cluster equidistanti e ruotati da Gamma.
 **Algoritmo**: assegna ogni linea a `clusterCount` cluster su 0°-180°, ruota di `(gamma/100)*180°`, applica jitter `±clusterSpread/2` e clampa (`lib/engine_v2/curves.ts:80-127`).  
 **Parametri configurabili**: `clusterCount` default 3, `clusterSpread` default 30° (`lib/engine_v2/engine.ts:130-134`).  
 **Seed prefixes**: `'${seed}:cluster:${lineIndex}'` per cluster, `'${seed}:jitter:${lineIndex}'` per jitter.  
@@ -170,11 +179,13 @@ sequenceDiagram
 ### 4.1 Active Sliders
 | Slider | Label UI | Range UI | Parametro Engine | Formula Mapping | Default |
 | --- | --- | --- | --- | --- | --- |
-| Slider1 | "Lunghezza linee" | 0–100 | `lengthScale` | `0.7 + (s/100) * 0.6` (`app/page.tsx:194-200`) | 50 → 1.0 |
-| Slider2 | "Curvatura linee" | 0–100 | `curvatureScale` | `0.3 + (s/100) * 1.4` (`app/page.tsx:202-208`) | 50 → 1.0 |
-| Slider3 | "Numero Cluster" | 0–100 | `clusterCount` | `round(2 + (s/100)*3)` (`app/page.tsx:209-215`) | 33 → 3 |
-| Slider4 | "Ampiezza Cluster" | 0–100 | `clusterSpread` | `10 + (s/100)*50` (`app/page.tsx:216-221`) | 40 → 30° |
+| Slider1 | "Lunghezza linee" | 0–100 | `lengthScale` | `0.7 + (s/100) * 0.6` (`app/page.tsx:160-177`) | 50 → 1.0 |
+| Slider2 | "Curvatura linee" | 0–100 | `curvatureScale` | `0.3 + (s/100) * 1.4` (`app/page.tsx:160-177`) | 50 → 1.0 |
+| Slider3 | "Numero Cluster" | 0–100 | `clusterCount` | `round(2 + (s/100)*3)` (`app/page.tsx:160-177`) | 33 → 3 |
+| Slider4 | "Ampiezza Cluster" | 0–100 | `clusterSpread` | `10 + (s/100)*50` (`app/page.tsx:160-177`) | 40 → 30° |
 | Force Orientation | Checkbox | on/off | `forceOrientation` | Rotazione 90° clockwise post-branching se bbox pre-mirroring ha height > width (`app/page.tsx`, `lib/engine_v2/engine.ts`) | off |
+| Bridges | ~~Checkbox~~ (removed) | n/a | `originBridgesEnabled` | ~~Se true inserisce Step 3.5 con grafo completo di linee tratteggiate tra gli anchor~~ (temporarily disabled, hardcoded to `false`) | off |
+| Real-Time Preview | Checkbox | on/off | n/a (UI scheduling) | requestAnimationFrame loop con throttle 16 ms e drop dei render stantii (`app/page.tsx:278-399`, `app/page.tsx:420-452`) | on (flag controllata da `NEXT_PUBLIC_REAL_TIME_GENERATION`) |
 
 ### 4.2 Slider Interaction Matrix
 | Slider | Step impattato | Effetto |
@@ -183,13 +194,24 @@ sequenceDiagram
 | Slider2 | Step 6 | Moltiplica l'offset di curvatura dopo i profili e prima del clamp (`lib/engine_v2/curves.ts:493-536`). |
 | Slider3 | Step 4/5/6 | Determina quanti cluster di direzione e influenza i seed dei profili (`lib/engine_v2/curves.ts:80-155`). |
 | Slider4 | Step 4 | Stabilisce l'ampiezza del jitter intra-cluster (`lib/engine_v2/curves.ts:80-127`). |
+| Bridges | Step 3.5 | ~~Abilita/disabilita il grafo di connessioni tratteggiate tra gli anchor keyword prima della generazione curve~~ (temporarily disabled, UI removed, hardcoded to `false`). |
 
 ### 4.3 Parameter Ranges & Defaults
-- `lengthScale` ∈ [0.7, 1.3], default 1.0 (`app/page.tsx:194-200`).
-- `curvatureScale` ∈ [0.3, 1.7], default 1.0 (`app/page.tsx:202-208`).
-- `clusterCount` ∈ [2, 5], default 3 (`app/page.tsx:209-215`).
-- `clusterSpread` ∈ [10°, 60°], default 30° (`app/page.tsx:216-221`).
+- `lengthScale` ∈ [0.7, 1.3], default 1.0 (`app/page.tsx:160-177`).
+- `curvatureScale` ∈ [0.3, 1.7], default 1.0 (`app/page.tsx:160-177`).
+- `clusterCount` ∈ [2, 5], default 3 (`app/page.tsx:160-177`).
+- `clusterSpread` ∈ [10°, 60°], default 30° (`app/page.tsx:160-177`).
 - `forceOrientation` ∈ {false, true}, default false (`app/page.tsx`).
+- `originBridgesEnabled` ∈ {false, true}, default false (temporarily disabled, UI removed, hardcoded in `app/page.tsx`).
+
+### 4.4 Real-Time Generation Loop
+- **Feature flag**: `NEXT_PUBLIC_REAL_TIME_GENERATION` → `REAL_TIME_GENERATION_FLAG` (`lib/featureFlags.ts`) controls whether the toggle is rendered and defaults to ON when the env var is undefined.
+- **Scheduler**: Slider `onChange`/pointer events feed `scheduleRealtimeGeneration` which stores the latest intent and throttles dispatch to ~60 Hz via `requestAnimationFrame` (`app/page.tsx:278-399`).
+- **Drop strategy**: When a newer drag arrives mid-render, `dropCurrentResult` marks the running promise as stale so the UI skips committing outdated geometry and logs the skip (`app/page.tsx:184-237`).
+- **Pointer finalize**: Global `pointerup`/`pointercancel` listeners trigger a final authoritative render at drag end (`app/page.tsx:380-399`), guaranteeing the last slider position is rendered even if intermediate frames were skipped.
+- **Telemetry**: `EngineV2DebugInfo.realtimeGeneration` captures duration, throttle hits and skipped renders so the debug overlay shows responsiveness metrics alongside geometry (`lib/types.ts:145-173`, `components/DebugOverlay.tsx:21-118`).
+- **UX**: The controls panel exposes “Anteprima real-time” with status text (`app/page.tsx:420-452`) that doubles as the required in-flight indicator (<100 ms target latency).
+- **Animation interop**: Manual renders replay the deterministic Animation Loop (forward 1.8 s → pause 0.42 s → forward-vanishing 1.8 s) configured via `ANIMATION_LOOP_CONFIG` while `components/SvgPreview.tsx` consumes the shared `animationProgress` to draw/retract every curve in sync (`app/page.tsx:24-159`). The preview keeps the final stroke styling active for the entire cycle and reveals only the animated portion via per-connection SVG masks, so dashed branches stay dashed from frame zero. Arrowheads are rendered as explicit triangles that move with the animated tip and keep rotating along the tangent; during export `lib/prepareSvgForExport.ts` snaps them back to the final endpoint and strips all preview masks before serialization. Slider-driven renders call `skipAnimationForNextRenderRef` to keep `animationProgress = 1`, preventing restarts during real-time preview.
 
 ---
 
@@ -205,6 +227,7 @@ sequenceDiagram
 | Length profile | `'${seed}:lenProfile:${pointIndex}:${lineIndex}:${clusterIndex}:${clusterCount}'` | seed, indici | `lib/engine_v2/curves.ts:computeLengthProfileMultiplier` |
 | Curvature profile | `'${seed}:curvProfile:${pointIndex}:${lineIndex}:${clusterIndex}:${clusterCount}'` | seed, indici | `lib/engine_v2/curves.ts:computeCurvatureProfileMultiplier` |
 | Point dispersion | `'${seed}:disperse:${pointIndex}:${lineIndex}'` | seed, indici | `lib/engine_v2/curves.ts:generateDispersedStartPoint` |
+| Origin Bridges | n/a (deterministico) | coppie anchor ordinarie | `lib/engine_v2/originBridges.ts` |
 | Delta jitter | `'${seed}:delta:curv:${pointIndex}:${start.x}:${start.y}'` | seed, coordinate start | `lib/engine_v2/curves.ts:applyDeltaIrregularity` |
 | Delta flip | `'${seed}:delta:dir:${pointIndex}:${start.x}:${start.y}'` | seed, coordinate start | `lib/engine_v2/curves.ts:applyDeltaIrregularity` |
 | Branch shuffle | `'${seed}:branching:intersection:shuffle:${i}'` | seed, indice shuffle | `lib/engine_v2/branching.ts:138-150` |
@@ -215,9 +238,11 @@ sequenceDiagram
 | Branch dashed | `'${seed}:branching:dashed:${i}:${branchIndex}'` | seed, indici | `lib/engine_v2/branching.ts:181-182` |
 
 ### 5.2 Determinism Contract
-- Seed globale = `cyrb53(keywords.join(",") + "-" + width + "-" + height)` (`app/page.tsx:154-201`).
-- Nessun parametro UI altera il seed; gli slider agiscono come moltiplicatori nel pipeline (`app/page.tsx:194-221`).
+- Seed globale = `cyrb53(keywords.join(",") + "-" + width + "-" + height)` (`app/page.tsx:120-177`).
+- Nessun parametro UI altera il seed; gli slider agiscono come moltiplicatori nel pipeline (`app/page.tsx:160-177`).
+- Il loop Real-Time controlla solo la frequenza degli aggiornamenti UI: `scheduleRealtimeGeneration` throttla/cancella richieste ma invoca sempre lo stesso `generateEngineV2` deterministico (`app/page.tsx:278-355`).
 - Force Orientation opera solo su geometria già deterministica e usa il bbox pre-mirroring (`lib/engine_v2/geometryRotation.ts`).
+- Origin Bridges non introducono PRNG aggiuntivi: il grafo dipende solo dall'array ordinato di anchor deterministici e dal toggle UI (`lib/engine_v2/originBridges.ts`).
 - Tutti gli effetti random sono clamped e riproducibili grazie a `seedrandom` (`lib/seed.ts:1-40`).
 
 ### 5.3 Testing Determinism

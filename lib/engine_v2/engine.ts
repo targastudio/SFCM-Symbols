@@ -10,6 +10,7 @@
  * 1. Keyword → 4 Axes (Alfa, Beta, Gamma, Delta) via axes.ts
  * 2. Alfa/Beta → Normalized coordinates → Pixel coordinates via position.ts
  * 3. Apply Gamma (number, direction, length) and Delta (curvature, jitter) via curves.ts
+ * 3.5 (Feature4): Connect anchor points with dashed Origin Bridges before conversion
  * 4. Convert to BranchedConnection format for rendering
  * 5. Final geometry mirroring (patch01) via finalMirroring.ts - applied AFTER curve generation
  * 6. Branching from intersections (Branching_beta01) via branching.ts - applied AFTER mirroring
@@ -35,6 +36,7 @@ import { generateCurveFromPoint } from "./curves";
 import { applyFinalMirroring, computeMirroringDebugInfo, computeBoundingBox } from "./finalMirroring";
 import { applyBranching } from "./branching";
 import { rotateConnectionsClockwise, shouldRotateGeometry } from "./geometryRotation";
+import { generateOriginBridges } from "./originBridges";
 
 /**
  * ENGINE_V2 options type
@@ -47,6 +49,7 @@ type EngineV2Options = {
   clusterCount?: number; // Number of direction clusters (default: 3)
   clusterSpread?: number; // Spread angle within each cluster in degrees (default: 30)
   forceOrientation?: boolean; // Feature3 toggle for geometry rotation
+  originBridgesEnabled?: boolean; // Feature4 toggle for dashed bridges between anchors
 };
 
 /**
@@ -141,6 +144,7 @@ export async function generateEngineV2(
   const clusterCount = options.clusterCount ?? 3;
   const clusterSpread = options.clusterSpread ?? 30;
   const forceOrientation = options.forceOrientation ?? false;
+  const originBridgesEnabled = options.originBridgesEnabled ?? false; // Temporarily disabled - UI removed
   if (keywords.length === 0) {
     return { connections: [] };
   }
@@ -180,6 +184,17 @@ export async function generateEngineV2(
       quadrant: getQuadrant(xNorm, yNorm),
     };
   });
+
+  // Feature4: Origin Bridges — connect anchor points with dashed straight lines
+  const originBridgeConnections = originBridgesEnabled
+    ? generateOriginBridges(
+        basePoints.map((bp) => ({
+          point: bp.pixel,
+          keyword: bp.keyword,
+          index: bp.index,
+        }))
+      )
+    : [];
 
   // NOTE: Old quadrant mirroring (Step 3) has been removed per patch01.
   // Mirroring is now applied as a final geometry step AFTER curve generation.
@@ -236,7 +251,11 @@ export async function generateEngineV2(
 
   // Step 4: Convert to BranchedConnection format for rendering
   // Reference: docs/ENGINE_V2_GEOMETRY_PIPELINE.md section 8
-  const connections = allCurves.map(curveToBranchedConnection);
+  const curveConnections = allCurves.map(curveToBranchedConnection);
+  const connections =
+    originBridgeConnections.length > 0
+      ? [...curveConnections, ...originBridgeConnections]
+      : curveConnections;
 
   const preMirroringBbox: GeometryBoundingBox | null = computeBoundingBox(
     connections,
@@ -293,6 +312,8 @@ export async function generateEngineV2(
         gamma: keywordVectors[0].axes.gamma, // Use first keyword's gamma value
         forceOrientationEnabled: forceOrientation,
         forceOrientationApplied: rotationApplied,
+        originBridgesEnabled,
+        originBridgesCount: originBridgeConnections.length,
       }
     : undefined;
 

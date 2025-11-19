@@ -33,6 +33,13 @@ Pipeline completa allineata a `docs/specs/SPEC_04_COSMOGRAPH_ENGINE.md`. Tutti g
   ```
 - Seed prefix: `"disperse:" + pointIndex + ":" + lineIndex`.
 
+## Step 3.5 — Origin Bridges (Feature4)
+- Funzione: `generateOriginBridges` (`lib/engine_v2/originBridges.ts`).
+- Costruisce il grafo completo tra gli anchor point in pixel (`basePoints`).
+- Ogni connessione ha `curved = false`, `curvature = 0`, `dashed = true`, `generationDepth = 0` così mantiene spessore/colore delle linee principali.
+- Non richiede seed: dipende solo dall'ordine deterministico delle keyword e dalle dimensioni canvas correnti.
+- Il toggle UI **Bridges** passa `originBridgesEnabled` tramite `EngineV2Options` per attivare/disattivare lo step.
+
 ## Step 4 — Direction clustering (patch03)
 - Funzione: `getLineDirection` (`lib/engine_v2/curves.ts:60-150`).
 - Parametri UI → `clusterCount` (2–5) e `clusterSpread` (10°–60°) da Slider3/4.

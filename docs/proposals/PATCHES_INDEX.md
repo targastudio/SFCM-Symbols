@@ -77,3 +77,19 @@ Indice delle patch applicate all'ENGINE_V2 all’interno del progetto **SFCM SYM
 - `ENGINE_V2_SLIDER_MAPPING.md` (note su interazione Slider1/Slider2 con i profili).  
 - `engine-v2-debug-overlay.md` (debug overlay aggiornato con visualizzazione profili).  
 - `CHANGELOG_SFCM_SYMBOLS.md` (entry patch04).
+
+---
+
+## patch05 — Animation dash rebuild & flicker fix
+
+- **ID:** patch_05_Animation_fix
+- **Data:** 2025-XX-XX
+- **Scope:** ricostruzione dell'animazione client-side nello `SvgPreview` per eliminare flicker e tratteggi indesiderati.
+- **Tipo:** Bugfix (rendering, non-breaking).
+- **Implementazione prevista:** `components/SvgPreview.tsx` (nuovo calcolo delle lunghezze e dash), eventuali aggiornamenti di documentazione UI.
+- **Contractor:** Cursor AI agent.
+
+### Documenti correlati
+
+- `patch_05_Animation_fix.md` (specifica della patch e piano tecnico).
+- `docs/changes/CHANGELOG_SFCM_SYMBOLS.md` (nuova entry sul fix animazione).

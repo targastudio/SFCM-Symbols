@@ -743,6 +743,64 @@ function expandMarkersIntoGeometry(svgClone: SVGSVGElement): void {
   // Both use the same shared styling constants, ensuring visual consistency
 }
 
+/**
+ * Removes preview-only animation masks to ensure exported SVGs contain static geometry.
+ */
+function removeAnimationMasks(svgClone: SVGSVGElement): void {
+  const maskedConnections = svgClone.querySelectorAll("path[mask], line[mask]");
+  maskedConnections.forEach((elem) => {
+    elem.removeAttribute("mask");
+  });
+
+  const animationMasks = svgClone.querySelectorAll('mask[data-animation-mask="true"]');
+  animationMasks.forEach((mask) => mask.remove());
+}
+
+/**
+ * Aligns dynamically animated arrowheads with the final endpoint before export.
+ * Ensures downloads always contain fully drawn geometry regardless of animation state.
+ */
+function finalizeDynamicArrowheads(svgClone: SVGSVGElement): void {
+  const arrowheads = svgClone.querySelectorAll('path[data-arrowhead-dynamic="true"]');
+  arrowheads.forEach((arrowPath) => {
+    if (!(arrowPath instanceof SVGPathElement)) {
+      return;
+    }
+
+    const connectionId = arrowPath.getAttribute("data-arrow-connection-id");
+    if (!connectionId) {
+      return;
+    }
+
+    const connectionElement = svgClone.querySelector(
+      `[data-connection-id="${connectionId}"]`
+    ) as (SVGLineElement | SVGPathElement | null);
+
+    if (!connectionElement) {
+      return;
+    }
+
+    let endpointData:
+      | { endX: number; endY: number; dirX: number; dirY: number }
+      | null = null;
+
+    if (connectionElement.tagName === "line") {
+      endpointData = getLineEndpointAndDirection(connectionElement as SVGLineElement);
+    } else if (connectionElement.tagName === "path") {
+      endpointData = getPathEndpointAndDirection(connectionElement as SVGPathElement);
+    }
+
+    if (!endpointData) {
+      return;
+    }
+
+    const angleDeg = (Math.atan2(endpointData.dirY, endpointData.dirX) * 180) / Math.PI;
+    const transform = `translate(${endpointData.endX} ${endpointData.endY}) rotate(${angleDeg}) translate(0 ${-ARROW_WIDTH_PX / 2})`;
+    arrowPath.setAttribute("transform", transform);
+    arrowPath.setAttribute("data-arrowhead", "true");
+  });
+}
+
 // ============================================================================
 // Animation Cleanup
 // ============================================================================
@@ -922,6 +980,12 @@ export function prepareSvgForExport(
     }
   });
 
+  // 7b. Align dynamic arrowheads with their final endpoints before export
+  finalizeDynamicArrowheads(svgClone);
+
+  // 7c. Remove preview-only animation masks
+  removeAnimationMasks(svgClone);
+
   // 8. Remove animation-only attributes
   removeAnimationAttributes(svgClone);
 
@@ -975,6 +1039,8 @@ export function prepareSvgForExport(
       path.removeAttribute("fill-opacity");
       // Remove the marker attribute after processing
       path.removeAttribute("data-arrowhead");
+      path.removeAttribute("data-arrowhead-dynamic");
+      path.removeAttribute("data-arrow-connection-id");
     }
   });
 

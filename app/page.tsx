@@ -5,17 +5,29 @@
  * UI con form keywords, slider e canvas rendering
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { cyrb53 } from "../lib/seed";
-import type { BranchedConnection, EngineV2DebugInfo } from "../lib/types";
+import type {
+  BranchedConnection,
+  EngineV2DebugInfo,
+  RealtimeGenerationDebug,
+} from "../lib/types";
 import { generateEngineV2 } from "../lib/engine_v2/engine";
 import SvgPreview from "../components/SvgPreview";
 import DownloadSvgButton from "../components/DownloadSvgButton";
 import {
   type CanvasSizeId,
   resolveCanvasSize,
-  validateCustomSize,
 } from "../lib/canvasSizeConfig";
+import { REAL_TIME_GENERATION_FLAG } from "../lib/featureFlags";
+
+type GenerationTrigger = "manual" | "slider" | "slider-finalize" | "force-orientation";
+const REAL_TIME_MIN_INTERVAL_MS = 16;
+const ANIMATION_LOOP_CONFIG = {
+  forwardDurationMs: 1800,
+  reverseDurationMs: 1800,
+  pauseDurationMs: 420,
+} as const;
 
 export default function Home() {
   const [keywords, setKeywords] = useState("Azione, Dispositivo, reale, ibrido, politica");
@@ -31,118 +43,123 @@ export default function Home() {
   const [clusterSpreadSlider, setClusterSpreadSlider] = useState(40);
   // Force Orientation toggle (Feature3)
   const [forceOrientation, setForceOrientation] = useState(false);
-  // Placeholder sliders (ENGINE_V2 placeholders - no effect on generation yet)
-  // NOTE: These sliders are kept in the UI for future mapping according to ENGINE_V2_SLIDER_MAPPING.md.
-  const [complessita, setComplessita] = useState(0.5);
-  const [mutamento, setMutamento] = useState(0.5);
   const [connections, setConnections] = useState<BranchedConnection[]>([]);
   const [debugInfo, setDebugInfo] = useState<EngineV2DebugInfo | undefined>(undefined);
   const [isGenerating, setIsGenerating] = useState(false);
   const [animationEnabled, setAnimationEnabled] = useState(true);
   const [animationProgress, setAnimationProgress] = useState(1); // 1 = fully drawn by default
   const [debugMode, setDebugMode] = useState(false); // Debug overlay toggle
+  const [realtimePreviewEnabled, setRealtimePreviewEnabled] = useState(REAL_TIME_GENERATION_FLAG);
+  const [activeGenerationTrigger, setActiveGenerationTrigger] = useState<GenerationTrigger | null>(null);
+  const [hasGeneratedAtLeastOnce, setHasGeneratedAtLeastOnce] = useState(false);
+  const [realtimeStats, setRealtimeStats] = useState<RealtimeGenerationDebug | undefined>(undefined);
 
   // Track if user has generated at least once (to prevent auto-generation on initial mount)
   const hasGeneratedOnceRef = useRef(false);
+  const generationInFlightRef = useRef(false);
+  const ongoingGenerationTriggerRef = useRef<GenerationTrigger | null>(null);
+  const skipAnimationForNextRenderRef = useRef(false);
+  const realtimeControllerRef = useRef<{
+    pendingReason: GenerationTrigger | null;
+    scheduled: boolean;
+    frameHandle: number | null;
+    lastDispatchTs: number;
+    throttleHits: number;
+    skippedRenders: number;
+    dropCurrentResult: boolean;
+  }>({
+    pendingReason: null,
+    scheduled: false,
+    frameHandle: null,
+    lastDispatchTs: 0,
+    throttleHits: 0,
+    skippedRenders: 0,
+    dropCurrentResult: false,
+  });
+  const processRealtimeQueueRef = useRef<() => void>(() => {});
+  const sliderDragRef = useRef<string | null>(null);
 
-  // Canvas size state
-  const [canvasSizeId, setCanvasSizeId] = useState<CanvasSizeId>("square");
-  const [customWidth, setCustomWidth] = useState<number | "">("");
-  const [customHeight, setCustomHeight] = useState<number | "">("");
-  const [viewportWidth, setViewportWidth] = useState<number>(1080);
-  const [viewportHeight, setViewportHeight] = useState<number>(1080);
+  // Canvas size - temporarily hardcoded to 1:1 (square)
+  // UI removed, backend code remains intact for future use
+  const canvasSizeId: CanvasSizeId = "square";
+  const realtimeFeatureActive = REAL_TIME_GENERATION_FLAG && realtimePreviewEnabled;
+
 
   /**
-   * Update viewport dimensions for "fit screen" option
-   * Uses useEffect to avoid SSR/hydration issues with window object
+   * Animation loop: forward → pause → forward-vanishing loop controlled by deterministic durations
+   * Phase 1 (forward): Lines grow from origin to arrowhead (0 → 1)
+   * Phase 2 (pause): Hold at full length (progress = 1)
+   * Phase 3 (forward-vanishing): Lines retract from origin toward arrowhead, arrowhead stays visible (1 → 0)
    */
   useEffect(() => {
-    if (canvasSizeId === "fit") {
-      const updateViewport = () => {
-        if (typeof window !== "undefined") {
-          setViewportWidth(window.innerWidth);
-          setViewportHeight(window.innerHeight);
+    // If animation is disabled or there is nothing to animate, keep progress at 1
+    if (!animationEnabled || connections.length === 0) {
+      setAnimationProgress(1);
+      return;
+    }
+
+    // When real-time preview updates connections we skip the animation reset
+    if (skipAnimationForNextRenderRef.current) {
+      skipAnimationForNextRenderRef.current = false;
+      setAnimationProgress(1);
+      return;
+    }
+
+    let frameId: number | null = null;
+    let cancelled = false;
+    const forwardDuration = Math.max(1, ANIMATION_LOOP_CONFIG.forwardDurationMs);
+    const pauseDuration = Math.max(0, ANIMATION_LOOP_CONFIG.pauseDurationMs);
+    // Phase 3 (forward-vanishing) uses the same duration as phase 1
+    const vanishingDuration = forwardDuration;
+    type LoopPhase = "forward" | "pause" | "forward-vanishing";
+    let phase: LoopPhase = "forward";
+    let phaseStart = performance.now();
+
+    const runFrame = (now: number) => {
+      if (cancelled) {
+        return;
+      }
+
+      const elapsed = now - phaseStart;
+
+      if (phase === "forward") {
+        const normalized = Math.min(1, elapsed / forwardDuration);
+        setAnimationProgress(normalized);
+        if (normalized >= 1) {
+          phase = pauseDuration > 0 ? "pause" : "forward-vanishing";
+          phaseStart = now;
         }
-      };
-      updateViewport();
-      if (typeof window !== "undefined") {
-        window.addEventListener("resize", updateViewport);
-        return () => window.removeEventListener("resize", updateViewport);
+      } else if (phase === "pause") {
+        setAnimationProgress(1);
+        if (elapsed >= pauseDuration) {
+          phase = "forward-vanishing";
+          phaseStart = now;
+        }
+      } else {
+        // forward-vanishing phase: progress goes from 1 → 0
+        const normalized = Math.max(0, 1 - elapsed / vanishingDuration);
+        setAnimationProgress(normalized);
+        if (normalized <= 0) {
+          phase = "forward";
+          phaseStart = now;
+        }
       }
-    }
-  }, [canvasSizeId]);
 
-  /**
-   * Auto-regenerate symbol when canvas size changes (if keywords exist)
-   * Only triggers after user has generated at least once manually
-   */
-  useEffect(() => {
-    // Skip if user hasn't generated at least once (prevent auto-generation on initial mount)
-    if (!hasGeneratedOnceRef.current) {
-      return;
-    }
-
-    // Skip if no keywords (empty or whitespace-only)
-    const keywordsList = keywords
-      .split(",")
-      .map((k) => k.trim())
-      .filter((k) => k.length > 0);
-
-    if (keywordsList.length === 0) {
-      return; // No keywords - do nothing
-    }
-
-    // Skip if generation is already in progress
-    if (isGenerating) {
-      return;
-    }
-
-    // Skip if custom size is selected but invalid
-    if (canvasSizeId === "custom" && !validateCustomSize(customWidth, customHeight)) {
-      return;
-    }
-
-    // Auto-trigger generation with current state
-    generateSymbolFromCurrentState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvasSizeId, customWidth, customHeight, viewportWidth, viewportHeight]);
-
-  /**
-   * Animation loop: animates animationProgress from 0 to 1 when animationEnabled is true
-   */
-  useEffect(() => {
-    // If animation is disabled, always show fully drawn symbol
-    if (!animationEnabled) {
-      setAnimationProgress(1);
-      return;
-    }
-
-    // If there are no connections, nothing to animate
-    if (connections.length === 0) {
-      setAnimationProgress(1);
-      return;
-    }
-
-    let frameId: number;
-    const duration = 3000; // 3 seconds for full animation
-    const start = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const t = Math.min(1, elapsed / duration);
-      setAnimationProgress(t);
-
-      if (t < 1 && animationEnabled) {
-        frameId = requestAnimationFrame(tick);
-      }
+      frameId = requestAnimationFrame(runFrame);
     };
 
-    // Ensure we start from 0 whenever this effect runs
+    // Ensure we start from 0 at the beginning of the forward phase
     setAnimationProgress(0);
-    frameId = requestAnimationFrame(tick);
+    frameId = requestAnimationFrame((now) => {
+      phaseStart = now;
+      runFrame(now);
+    });
 
     return () => {
-      cancelAnimationFrame(frameId);
+      cancelled = true;
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
     };
   }, [animationEnabled, connections]);
 
@@ -150,8 +167,7 @@ export default function Home() {
    * Genera seed globale deterministico da keywords e canvas size
    * 
    * NOTE: Only lineLengthSlider influences generation via lengthScale.
-   * Other sliders (ramificazione, complessità, mutamento) are placeholders
-   * and do not influence generation. They are kept in the UI but not used in the seed.
+   * Sliders do not influence the seed - they modify geometry post-generation.
    */
   function generateSeed(
     keywords: string[],
@@ -163,112 +179,277 @@ export default function Home() {
     return String(cyrb53(params));
   }
 
-  /**
-   * Core generation logic - extracted for reuse by handleGenerate and auto-regeneration
-   * Uses current component state (keywords, sliders, canvas dimensions) to generate symbol
-   */
-  async function generateSymbolFromCurrentState() {
-    // 1. Normalizza e splitta keywords
-    const keywordsList = keywords
-      .split(",")
-      .map((k) => k.trim())
-      .filter((k) => k.length > 0);
+  const generateSymbolFromCurrentState = useCallback(
+    async (trigger: GenerationTrigger = "manual") => {
+      const keywordsList = keywords
+        .split(",")
+        .map((k) => k.trim())
+        .filter((k) => k.length > 0);
 
-    if (keywordsList.length === 0) {
-      return; // No keywords - do nothing
-    }
-
-    setIsGenerating(true);
-    try {
-      // Resolve canvas dimensions for geometry generation
-      const { width: canvasWidth, height: canvasHeight } = resolveCanvasSize(
-        canvasSizeId,
-        customWidth,
-        customHeight,
-        viewportWidth,
-        viewportHeight
-      );
-
-      // Generate seed (based on keywords and canvas size only)
-      // NOTE: Sliders (lengthScale, curvatureScale) do not affect seed - they modify geometry post-generation
-      const seed = generateSeed(keywordsList, canvasWidth, canvasHeight);
-
-      // Map Slider1 (0-100) to lengthScale (0.7-1.3)
-      // Formula: lengthScale = 0.7 + (slider / 100) * (1.3 - 0.7)
-      // s = 0   → lengthScale = 0.7   (shorter lines)
-      // s = 50  → lengthScale = 1.0   (baseline)
-      // s = 100 → lengthScale = 1.3   (longer lines)
-      const s = lineLengthSlider; // 0..100
-      const lengthScale = 0.7 + (s / 100) * (1.3 - 0.7);
-
-      // Map Slider2 "Curvatura linee" (0-100) to curvatureScale (0.3-1.7)
-      // Formula: curvatureScale = 0.3 + (slider / 100) * (1.7 - 0.3)
-      // s = 0   → curvatureScale = 0.3   (curve meno marcate)
-      // s = 50  → curvatureScale = 1.0   (baseline)
-      // s = 100 → curvatureScale = 1.7   (curve molto marcate)
-      const curvatureScale = 0.3 + (curvatureSlider / 100) * (1.7 - 0.3);
-
-      // Map Slider3 "Numero Cluster" (0-100) to clusterCount (2-5)
-      // Formula: clusterCount = Math.round(2 + (slider / 100) * 3)
-      // s = 0   → clusterCount = 2
-      // s = 33  → clusterCount = 3 (default)
-      // s = 100 → clusterCount = 5
-      const clusterCount = Math.round(2 + (clusterCountSlider / 100) * 3);
-
-      // Map Slider4 "Ampiezza Cluster" (0-100) to clusterSpread (10-60)
-      // Formula: clusterSpread = 10 + (slider / 100) * 50
-      // s = 0   → clusterSpread = 10  (cluster stretti)
-      // s = 40  → clusterSpread = 30  (default)
-      // s = 100 → clusterSpread = 60  (cluster ampi)
-      const clusterSpread = 10 + (clusterSpreadSlider / 100) * 50;
-
-      // ENGINE_V2: Generate connections using the new 4-axis engine
-      // includeDebug: only capture debug info when debugMode is enabled
-      const result = await generateEngineV2(
-        keywordsList,
-        seed,
-        canvasWidth,
-        canvasHeight,
-        debugMode,
-        { lengthScale, curvatureScale, clusterCount, clusterSpread, forceOrientation }
-      );
-
-      // CRITICAL: Reset animation state BEFORE setting new connections
-      // This prevents ghost lines/flash when canvas size changes:
-      // Strategy:
-      // 1. Clear old connections immediately (empty array = no visible lines)
-      // 2. Reset animation progress to 0 (ensures animation starts from empty)
-      // 3. Set animation enabled
-      // 4. Set new connections in next frame (after state updates are batched)
-      // This ensures no frame shows fully drawn lines before animation starts
-      setConnections([]);
-      if (debugMode) {
-        setDebugInfo(result.debug);
-      } else {
-        setDebugInfo(undefined);
+      if (keywordsList.length === 0) {
+        return;
       }
-      
-      // Use flushSync or double RAF to ensure state updates happen in correct order
-      // First RAF: ensure connections are cleared and animation state is reset
-      requestAnimationFrame(() => {
-        setAnimationProgress(0);
-        setAnimationEnabled(true);
-        
-        // Second RAF: set new connections after animation state is ready
-        requestAnimationFrame(() => {
-          setConnections(result.connections);
-        });
-      });
-      
-      // Mark that generation has happened at least once
-      hasGeneratedOnceRef.current = true;
-    } catch (error) {
-      console.error("Errore durante la generazione:", error);
-      alert("Errore durante la generazione del simbolo");
-    } finally {
-      setIsGenerating(false);
+
+      const controller = realtimeControllerRef.current;
+      generationInFlightRef.current = true;
+      ongoingGenerationTriggerRef.current = trigger;
+      setActiveGenerationTrigger(trigger);
+      setIsGenerating(true);
+
+      const startedAt = performance.now();
+
+      try {
+        const { width: canvasWidth, height: canvasHeight } = resolveCanvasSize(canvasSizeId);
+        const seed = generateSeed(keywordsList, canvasWidth, canvasHeight);
+
+        const lengthScale = 0.7 + (lineLengthSlider / 100) * (1.3 - 0.7);
+        const curvatureScale = 0.3 + (curvatureSlider / 100) * (1.7 - 0.3);
+        const clusterCount = Math.round(2 + (clusterCountSlider / 100) * 3);
+        const clusterSpread = 10 + (clusterSpreadSlider / 100) * 50;
+
+        const includeDebug = debugMode;
+        const runAnimation = animationEnabled && trigger === "manual";
+        const result = await generateEngineV2(
+          keywordsList,
+          seed,
+          canvasWidth,
+          canvasHeight,
+          includeDebug,
+          {
+            lengthScale,
+            curvatureScale,
+            clusterCount,
+            clusterSpread,
+            forceOrientation,
+            originBridgesEnabled: false,
+          }
+        );
+
+        const completedAt = performance.now();
+        const durationMs = completedAt - startedAt;
+        const shouldDropResult = trigger !== "manual" && controller.dropCurrentResult;
+
+        if (shouldDropResult) {
+          controller.dropCurrentResult = false;
+          controller.skippedRenders += 1;
+          console.debug(
+            `[RealTimeGeneration] Skipped stale render (trigger=${trigger})`
+          );
+        } else {
+          if (includeDebug && result.debug) {
+            const realtimePayload: RealtimeGenerationDebug | undefined =
+              trigger === "manual"
+                ? undefined
+                : {
+                    enabled: realtimeFeatureActive,
+                    lastTrigger: trigger === "slider" || trigger === "slider-finalize" || trigger === "force-orientation" ? trigger : undefined,
+                    durationMs,
+                    updatedAt: completedAt,
+                    throttleHits: controller.throttleHits,
+                    skippedRenders: controller.skippedRenders,
+                  };
+            setDebugInfo({
+              ...result.debug,
+              ...(realtimePayload && { realtimeGeneration: realtimePayload }),
+            });
+          } else {
+            setDebugInfo(undefined);
+          }
+
+          if (runAnimation) {
+            setConnections([]);
+            requestAnimationFrame(() => {
+              setAnimationProgress(0);
+              requestAnimationFrame(() => {
+                setConnections(result.connections);
+              });
+            });
+          } else {
+            skipAnimationForNextRenderRef.current = true;
+            setAnimationProgress(1);
+            setConnections(result.connections);
+          }
+
+          if (!hasGeneratedOnceRef.current) {
+            hasGeneratedOnceRef.current = true;
+            setHasGeneratedAtLeastOnce(true);
+          }
+
+          if (trigger !== "manual") {
+            setRealtimeStats({
+              enabled: realtimeFeatureActive,
+              lastTrigger: trigger === "slider" || trigger === "slider-finalize" || trigger === "force-orientation" ? trigger : undefined,
+              durationMs,
+              updatedAt: completedAt,
+              throttleHits: controller.throttleHits,
+              skippedRenders: controller.skippedRenders,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Errore durante la generazione:", error);
+        if (trigger === "manual") {
+          alert("Errore durante la generazione del simbolo");
+        }
+      } finally {
+        generationInFlightRef.current = false;
+        ongoingGenerationTriggerRef.current = null;
+        controller.dropCurrentResult = false;
+        setIsGenerating(false);
+        setActiveGenerationTrigger(null);
+
+        if (
+          realtimeFeatureActive &&
+          controller.pendingReason &&
+          !controller.scheduled &&
+          typeof requestAnimationFrame !== "undefined"
+        ) {
+          controller.scheduled = true;
+          controller.frameHandle = requestAnimationFrame(() => {
+            controller.scheduled = false;
+            processRealtimeQueueRef.current();
+          });
+        }
+      }
+    },
+    [
+      keywords,
+      lineLengthSlider,
+      curvatureSlider,
+      clusterCountSlider,
+      clusterSpreadSlider,
+      forceOrientation,
+      debugMode,
+      realtimeFeatureActive,
+      canvasSizeId,
+      animationEnabled,
+    ]
+  );
+
+  const processRealtimeQueue = useCallback(() => {
+    const controller = realtimeControllerRef.current;
+
+    if (!realtimeFeatureActive) {
+      controller.pendingReason = null;
+      controller.scheduled = false;
+      return;
     }
-  }
+
+    if (!controller.pendingReason) {
+      return;
+    }
+
+    if (generationInFlightRef.current) {
+      if (!controller.scheduled && typeof requestAnimationFrame !== "undefined") {
+        controller.scheduled = true;
+        controller.frameHandle = requestAnimationFrame(() => {
+          controller.scheduled = false;
+          processRealtimeQueueRef.current();
+        });
+      }
+      return;
+    }
+
+    const now = performance.now();
+    const delta = now - controller.lastDispatchTs;
+
+    if (delta < REAL_TIME_MIN_INTERVAL_MS) {
+      controller.throttleHits += 1;
+      console.debug(
+        `[RealTimeGeneration] Frame throttled (${delta.toFixed(2)}ms)`
+      );
+      if (!controller.scheduled && typeof requestAnimationFrame !== "undefined") {
+        controller.scheduled = true;
+        controller.frameHandle = requestAnimationFrame(() => {
+          controller.scheduled = false;
+          processRealtimeQueueRef.current();
+        });
+      }
+      return;
+    }
+
+    const reason = controller.pendingReason;
+    controller.pendingReason = null;
+    controller.lastDispatchTs = now;
+
+    void generateSymbolFromCurrentState(reason ?? "slider");
+  }, [generateSymbolFromCurrentState, realtimeFeatureActive]);
+
+  useEffect(() => {
+    processRealtimeQueueRef.current = processRealtimeQueue;
+  }, [processRealtimeQueue]);
+
+  const scheduleRealtimeGeneration = useCallback(
+    (reason: GenerationTrigger = "slider") => {
+      if (!realtimeFeatureActive || !hasGeneratedOnceRef.current) {
+        return;
+      }
+
+      const controller = realtimeControllerRef.current;
+      controller.pendingReason = reason;
+
+      if (
+        generationInFlightRef.current &&
+        ongoingGenerationTriggerRef.current &&
+        ongoingGenerationTriggerRef.current !== "manual"
+      ) {
+        controller.dropCurrentResult = true;
+      }
+
+      if (!controller.scheduled && typeof requestAnimationFrame !== "undefined") {
+        controller.scheduled = true;
+        controller.frameHandle = requestAnimationFrame(() => {
+          controller.scheduled = false;
+          processRealtimeQueueRef.current();
+        });
+      }
+    },
+    [realtimeFeatureActive]
+  );
+
+  useEffect(() => {
+    const controller = realtimeControllerRef.current;
+    return () => {
+      if (controller.frameHandle !== null && typeof cancelAnimationFrame !== "undefined") {
+        cancelAnimationFrame(controller.frameHandle);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const controller = realtimeControllerRef.current;
+    if (!realtimeFeatureActive) {
+      if (controller.frameHandle !== null && typeof cancelAnimationFrame !== "undefined") {
+        cancelAnimationFrame(controller.frameHandle);
+        controller.frameHandle = null;
+      }
+      controller.pendingReason = null;
+      controller.dropCurrentResult = false;
+    }
+  }, [realtimeFeatureActive]);
+
+  useEffect(() => {
+    if (!realtimeFeatureActive) {
+      sliderDragRef.current = null;
+      setRealtimeStats(undefined);
+      return;
+    }
+
+    const handlePointerUp = () => {
+      if (sliderDragRef.current) {
+        sliderDragRef.current = null;
+        scheduleRealtimeGeneration("slider-finalize");
+      }
+    };
+
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [realtimeFeatureActive, scheduleRealtimeGeneration]);
 
   /**
    * Genera il simbolo (called by "Genera" button)
@@ -285,24 +466,33 @@ export default function Home() {
       return;
     }
 
-    await generateSymbolFromCurrentState();
+    await generateSymbolFromCurrentState("manual");
   }
 
-  // Validate custom size for enabling generate button
-  const isCustomSizeValid =
-    canvasSizeId !== "custom" ||
-    validateCustomSize(customWidth, customHeight);
+  const generationButtonLabel = isGenerating
+    ? activeGenerationTrigger && activeGenerationTrigger !== "manual"
+      ? "Anteprima in tempo reale..."
+      : "Generazione in corso..."
+    : "Genera";
 
-  // Resolve effective canvas dimensions for preview/export
+  const realtimeIndicatorText =
+    isGenerating && activeGenerationTrigger && activeGenerationTrigger !== "manual"
+      ? "Aggiornamento in tempo reale..."
+      : realtimeStats
+      ? `Ultimo update: ${
+          realtimeStats.durationMs !== undefined ? `${realtimeStats.durationMs.toFixed(1)} ms` : "n/d"
+        }`
+      : "In attesa del primo render";
+
+  const realtimeIndicatorMeta =
+    realtimeStats && (realtimeStats.throttleHits !== undefined || realtimeStats.skippedRenders !== undefined)
+      ? `Throttle ${realtimeStats.throttleHits ?? 0} · Skip ${realtimeStats.skippedRenders ?? 0}`
+      : undefined;
+
+  // Resolve effective canvas dimensions for preview/export (hardcoded to square)
   // Note: This is also resolved inside handleGenerate for geometry generation
   // to ensure consistency between generation and preview/export
-  const { width: canvasWidth, height: canvasHeight } = resolveCanvasSize(
-    canvasSizeId,
-    customWidth,
-    customHeight,
-    viewportWidth,
-    viewportHeight
-  );
+  const { width: canvasWidth, height: canvasHeight } = resolveCanvasSize("square");
 
   return (
     <div className="page-shell">
@@ -350,7 +540,15 @@ export default function Home() {
                 max="100"
                 step="1"
                 value={lineLengthSlider}
-                onChange={(e) => setLineLengthSlider(parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  setLineLengthSlider(parseInt(e.target.value, 10));
+                  scheduleRealtimeGeneration("slider");
+                }}
+                onPointerDown={() => {
+                  if (realtimeFeatureActive) {
+                    sliderDragRef.current = "lineLength";
+                  }
+                }}
                 style={{ width: "100%" }}
               />
             </div>
@@ -367,7 +565,15 @@ export default function Home() {
                 max="100"
                 step="1"
                 value={curvatureSlider}
-                onChange={(e) => setCurvatureSlider(parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  setCurvatureSlider(parseInt(e.target.value, 10));
+                  scheduleRealtimeGeneration("slider");
+                }}
+                onPointerDown={() => {
+                  if (realtimeFeatureActive) {
+                    sliderDragRef.current = "curvature";
+                  }
+                }}
                 style={{ width: "100%" }}
               />
             </div>
@@ -384,7 +590,15 @@ export default function Home() {
                 max="100"
                 step="1"
                 value={clusterCountSlider}
-                onChange={(e) => setClusterCountSlider(parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  setClusterCountSlider(parseInt(e.target.value, 10));
+                  scheduleRealtimeGeneration("slider");
+                }}
+                onPointerDown={() => {
+                  if (realtimeFeatureActive) {
+                    sliderDragRef.current = "clusterCount";
+                  }
+                }}
                 style={{ width: "100%" }}
               />
             </div>
@@ -401,7 +615,15 @@ export default function Home() {
                 max="100"
                 step="1"
                 value={clusterSpreadSlider}
-                onChange={(e) => setClusterSpreadSlider(parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  setClusterSpreadSlider(parseInt(e.target.value, 10));
+                  scheduleRealtimeGeneration("slider");
+                }}
+                onPointerDown={() => {
+                  if (realtimeFeatureActive) {
+                    sliderDragRef.current = "clusterSpread";
+                  }
+                }}
                 style={{ width: "100%" }}
               />
             </div>
@@ -420,7 +642,10 @@ export default function Home() {
                 <input
                   type="checkbox"
                   checked={forceOrientation}
-                  onChange={(e) => setForceOrientation(e.target.checked)}
+                  onChange={(e) => {
+                    setForceOrientation(e.target.checked);
+                    scheduleRealtimeGeneration("force-orientation");
+                  }}
                 />
                 Force Orientation
               </label>
@@ -429,155 +654,48 @@ export default function Home() {
               </span>
             </div>
 
-            {/* Placeholder sliders (ENGINE_V2 placeholders - no effect on generation yet) */}
-            {/* These sliders are kept in the UI for future mapping according to ENGINE_V2_SLIDER_MAPPING.md. */}
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <label htmlFor="complessita" style={{ fontSize: "1rem" }}>
-                Complessità: {complessita.toFixed(2)}
-              </label>
-              <input
-                id="complessita"
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={complessita}
-                onChange={(e) => setComplessita(parseFloat(e.target.value))}
-                style={{ width: "100%" }}
-              />
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <label htmlFor="mutamento" style={{ fontSize: "1rem" }}>
-                Mutamento: {mutamento.toFixed(2)}
-              </label>
-              <input
-                id="mutamento"
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={mutamento}
-                onChange={(e) => setMutamento(parseFloat(e.target.value))}
-                style={{ width: "100%" }}
-              />
-            </div>
 
           </div>
 
-          {/* Canvas Size Selection */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <label style={{ fontSize: "1rem", fontWeight: "bold" }}>
-              Canvas Size:
-            </label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {(["square", "4_5", "9_16", "16_9", "fit", "custom"] as const).map(
-                (id) => (
-                  <label
-                    key={id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      fontSize: "0.95rem",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="canvasSize"
-                      value={id}
-                      checked={canvasSizeId === id}
-                      onChange={(e) => setCanvasSizeId(e.target.value as CanvasSizeId)}
-                    />
-                    <span>
-                      {id === "square"
-                        ? "1:1 (1080×1080)"
-                        : id === "4_5"
-                        ? "4:5 (1080×1350)"
-                        : id === "9_16"
-                        ? "9:16 (1080×1920)"
-                        : id === "16_9"
-                        ? "16:9 (1920×1080)"
-                        : id === "fit"
-                        ? "Fit Screen"
-                        : "Custom"}
-                    </span>
-                  </label>
-                )
-              )}
-            </div>
 
-            {/* Custom size inputs */}
-            {canvasSizeId === "custom" && (
+          {/* Real-Time Generation Toggle */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.35rem",
+              paddingTop: "0.75rem",
+              borderTop: "1px solid #333",
+            }}
+          >
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem" }}>
+              <input
+                type="checkbox"
+                checked={realtimePreviewEnabled}
+                onChange={(e) => setRealtimePreviewEnabled(e.target.checked)}
+                disabled={!REAL_TIME_GENERATION_FLAG}
+              />
+              Anteprima real-time
+            </label>
+            <span style={{ fontSize: "0.85rem", color: "#bbb" }}>
+              Aggiorna il simbolo mentre trascini gli slider (loop con cap ~60Hz).{" "}
+              {!REAL_TIME_GENERATION_FLAG && "Abilita NEXT_PUBLIC_REAL_TIME_GENERATION per sbloccare la feature."}
+            </span>
+            {realtimeFeatureActive && hasGeneratedAtLeastOnce && (
               <div
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.5rem",
-                  marginLeft: "1.5rem",
-                  padding: "0.75rem",
-                  border: "1px solid #333",
+                  fontSize: "0.85rem",
+                  color: "#8be9fd",
+                  backgroundColor: "#111",
+                  border: "1px solid #1f8aad",
                   borderRadius: "4px",
+                  padding: "0.5rem",
                 }}
               >
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                  <label htmlFor="customWidth" style={{ fontSize: "0.9rem" }}>
-                    Width (px):
-                  </label>
-                  <input
-                    id="customWidth"
-                    type="number"
-                    min="1"
-                    max="10000"
-                    step="1"
-                    value={customWidth}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setCustomWidth(val === "" ? "" : parseInt(val, 10));
-                    }}
-                    placeholder="1080"
-                    style={{
-                      padding: "0.5rem",
-                      fontSize: "0.9rem",
-                      fontFamily: "Times New Roman, serif",
-                      backgroundColor: "#111",
-                      color: "#fff",
-                      border: "1px solid #333",
-                      borderRadius: "4px",
-                    }}
-                  />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                  <label htmlFor="customHeight" style={{ fontSize: "0.9rem" }}>
-                    Height (px):
-                  </label>
-                  <input
-                    id="customHeight"
-                    type="number"
-                    min="1"
-                    max="10000"
-                    step="1"
-                    value={customHeight}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setCustomHeight(val === "" ? "" : parseInt(val, 10));
-                    }}
-                    placeholder="1080"
-                    style={{
-                      padding: "0.5rem",
-                      fontSize: "0.9rem",
-                      fontFamily: "Times New Roman, serif",
-                      backgroundColor: "#111",
-                      color: "#fff",
-                      border: "1px solid #333",
-                      borderRadius: "4px",
-                    }}
-                  />
-                </div>
-                {!isCustomSizeValid && (
-                  <div style={{ fontSize: "0.85rem", color: "#ff6b6b" }}>
-                    Please enter valid width and height (1-10000px)
+                <div>{realtimeIndicatorText}</div>
+                {realtimeIndicatorMeta && (
+                  <div style={{ fontSize: "0.8rem", color: "#88c0d0" }}>
+                    {realtimeIndicatorMeta}
                   </div>
                 )}
               </div>
@@ -611,7 +729,7 @@ export default function Home() {
           {/* Pulsante Genera */}
           <button
             onClick={handleGenerate}
-            disabled={isGenerating || !isCustomSizeValid}
+            disabled={isGenerating}
             style={{
               padding: "1rem 2rem",
               fontSize: "1.1rem",
@@ -624,7 +742,7 @@ export default function Home() {
               transition: "all 0.2s",
             }}
           >
-            {isGenerating ? "Generazione in corso..." : "Genera"}
+            {generationButtonLabel}
           </button>
         </div>
 

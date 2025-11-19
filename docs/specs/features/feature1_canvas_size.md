@@ -1,9 +1,7 @@
 # Feature 6.1 — Canvas Size Options  
 Enhancement Specification  
 Version: 1.0  
-Location: `docs/reference/features/feature1_canvas_size.md` (companion to SPEC_04 §2.2)
-
-> **Status**: Temporarily disabled. The UI control has been removed and the canvas size is hardcoded to `"square"` (1:1, 1080×1080) in `app/page.tsx`. Backend code remains intact in `lib/canvasSizeConfig.ts` for potential future use.
+Location: docs/extrafeatures/feature1_canvas_size.md
 
 ## Overview
 This feature adds full support for choosing different canvas sizes for both:

@@ -130,6 +130,18 @@ export type DirectionClusterDebug = {
   curvatureProfile?: number;
 };
 
+/**
+ * Telemetry captured by the UI to describe real-time generation responsiveness.
+ */
+export type RealtimeGenerationDebug = {
+  enabled: boolean;
+  lastTrigger?: "slider" | "slider-finalize" | "force-orientation";
+  durationMs?: number;
+  updatedAt?: number;
+  throttleHits?: number;
+  skippedRenders?: number;
+};
+
 export type EngineV2DebugInfo = {
   alfa: number;
   beta: number;
@@ -146,4 +158,9 @@ export type EngineV2DebugInfo = {
   // Feature3: Force Orientation telemetry
   forceOrientationEnabled?: boolean;
   forceOrientationApplied?: boolean;
+  // Feature4: Origin Bridges telemetry
+  originBridgesEnabled?: boolean;
+  originBridgesCount?: number;
+  // Feature: Real-Time Generation telemetry (UI-provided)
+  realtimeGeneration?: RealtimeGenerationDebug;
 };
