@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+
+import { useEffect, useRef, useState } from "react";
 import type { BranchedConnection, EngineV2DebugInfo } from "../lib/types";
 import { computeCurveControl } from "../lib/svgUtils";
 import {
@@ -70,26 +72,31 @@ export default function SvgPreview({
 }: SvgPreviewProps) {
   // Track previous progress to detect vanishing phase (progress decreasing from 1)
   const prevProgressRef = useRef<number>(animationProgress);
-  const isVanishingRef = useRef<boolean>(false);
+  const [isVanishingPhase, setIsVanishingPhase] = useState(false);
 
   useEffect(() => {
     if (!animationEnabled || animationProgress === undefined) {
       prevProgressRef.current = animationProgress ?? 1;
-      isVanishingRef.current = false;
+      setIsVanishingPhase(false);
       return;
     }
 
     // Detect vanishing phase: progress was at or near 1, now decreasing
+    let nextIsVanishing = isVanishingPhase;
     if (prevProgressRef.current >= 0.99 && animationProgress < prevProgressRef.current) {
-      isVanishingRef.current = true;
+      nextIsVanishing = true;
     }
     // Reset vanishing flag when we reach 0 (start of new forward phase)
     if (animationProgress <= 0.01) {
-      isVanishingRef.current = false;
+      nextIsVanishing = false;
+    }
+
+    if (nextIsVanishing !== isVanishingPhase) {
+      setIsVanishingPhase(nextIsVanishing);
     }
 
     prevProgressRef.current = animationProgress;
-  }, [animationEnabled, animationProgress]);
+  }, [animationEnabled, animationProgress, isVanishingPhase]);
 
   // Ordina le connessioni per generationDepth (0 = MST, 1 = extra, 2 = ramificazioni)
   const sortedConnections = [...connections].sort(
@@ -124,7 +131,7 @@ export default function SvgPreview({
             animationProgress,
             localProgress: easedProgress,
             pathLength: geometry.length,
-            isVanishing: isVanishingRef.current,
+            isVanishing: isVanishingPhase,
           })
         : null;
 
@@ -134,7 +141,7 @@ export default function SvgPreview({
         animationEnabled,
         animationProgress,
         localProgress: easedProgress,
-        isVanishing: isVanishingRef.current,
+        isVanishing: isVanishingPhase,
       });
 
       return {
@@ -209,8 +216,8 @@ export default function SvgPreview({
             })}
           </defs>
         )}
-        {/* Sfondo nero */}
-        <rect x="0" y="0" width={canvasWidth} height={canvasHeight} fill={BACKGROUND_COLOR} />
+        {/* Background - transparent to show preview panel background */}
+        <rect x="0" y="0" width={canvasWidth} height={canvasHeight} fill="none" />
 
         {/* Canvas outline (preview only - removed in export) */}
         <rect

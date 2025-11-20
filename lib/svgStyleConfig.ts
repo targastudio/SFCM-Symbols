@@ -14,7 +14,7 @@
 
 // Line styling
 export const BASE_STROKE_WIDTH = 3; // px
-export const STROKE_COLOR = "#ffffff";
+export const STROKE_COLOR = "#0b0b0b";
 
 // Arrowhead styling
 // ARROW_WIDTH_PX = 14px: length along the line direction (horizontal extent)
@@ -24,7 +24,7 @@ export const ARROW_WIDTH_PX = 14; // px - length along the line direction
 export const ARROW_HEIGHT_PX = 19; // px - height/base span perpendicular to line
 
 // Background
-export const BACKGROUND_COLOR = "#000000";
+export const BACKGROUND_COLOR = "#ffffff";
 
 // Marker configuration
 // Using userSpaceOnUse to avoid stroke-width-based scaling

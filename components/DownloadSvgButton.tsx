@@ -68,16 +68,7 @@ export default function DownloadSvgButton({
       type="button"
       onClick={handleDownload}
       disabled={connections.length === 0}
-      style={{
-        padding: "0.5rem 1rem",
-        border: "1px solid #ffffff",
-        background: "transparent",
-        color: "#ffffff",
-        cursor: connections.length === 0 ? "not-allowed" : "pointer",
-        fontFamily: "Times New Roman, serif",
-        fontSize: "1rem",
-        borderRadius: "4px",
-      }}
+      className="secondary-button"
     >
       Download SVG
     </button>

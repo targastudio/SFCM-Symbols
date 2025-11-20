@@ -15,6 +15,7 @@ import type {
 import { generateEngineV2 } from "../lib/engine_v2/engine";
 import SvgPreview from "../components/SvgPreview";
 import DownloadSvgButton from "../components/DownloadSvgButton";
+import LayoutDebugOverlay from "../components/LayoutDebugOverlay";
 import {
   type CanvasSizeId,
   resolveCanvasSize,
@@ -49,6 +50,7 @@ export default function Home() {
   const [animationEnabled, setAnimationEnabled] = useState(true);
   const [animationProgress, setAnimationProgress] = useState(1); // 1 = fully drawn by default
   const [debugMode, setDebugMode] = useState(false); // Debug overlay toggle
+  const [layoutDebugMode, setLayoutDebugMode] = useState(false); // Layout debug overlay toggle
   const [realtimePreviewEnabled, setRealtimePreviewEnabled] = useState(REAL_TIME_GENERATION_FLAG);
   const [activeGenerationTrigger, setActiveGenerationTrigger] = useState<GenerationTrigger | null>(null);
   const [hasGeneratedAtLeastOnce, setHasGeneratedAtLeastOnce] = useState(false);
@@ -494,45 +496,39 @@ export default function Home() {
   // to ensure consistency between generation and preview/export
   const { width: canvasWidth, height: canvasHeight } = resolveCanvasSize("square");
 
+  const connectionsAvailable = connections.length > 0;
+
   return (
     <div className="page-shell">
       <div className="layout-main">
         <div className="controls-panel">
-          <h1 style={{ fontSize: "2rem" }}>
-            SFCM Symbol Generator
-          </h1>
+          <div className="brand-block">
+            <img src="/logo.png" alt="Logo" className="brand-logo" />
+          </div>
 
           {/* Form Keywords */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            <label htmlFor="keywords" style={{ fontSize: "1.1rem" }}>
-              Keywords (separate da virgola):
+          <div className="field-group">
+            <label htmlFor="keywords" className="field-label">
+              Keywords separate dalla virgola
             </label>
             <textarea
               id="keywords"
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
-              placeholder="es: ordine, caos, conflitto, consenso"
-              style={{
-                padding: "0.75rem",
-                fontSize: "1rem",
-                fontFamily: "Times New Roman, serif",
-                backgroundColor: "#111",
-                color: "#fff",
-                border: "1px solid #333",
-                borderRadius: "4px",
-                minHeight: "80px",
-                resize: "vertical",
-              }}
+              placeholder="Azione, impronta, specifico"
+              className="text-input"
             />
           </div>
 
           {/* Sliders */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {/* Slider1: Lunghezza linee - controls lengthScale in ENGINE_V2 */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <label htmlFor="lineLength" style={{ fontSize: "1rem" }}>
-                Lunghezza linee: {lineLengthSlider}
-              </label>
+          <div className="slider-stack">
+            <div className="slider-row">
+              <div className="slider-label-wrapper">
+                <label htmlFor="lineLength" className="field-label">
+                  Lunghezza linee
+                </label>
+                <span className="slider-value">{lineLengthSlider}</span>
+              </div>
               <input
                 id="lineLength"
                 type="range"
@@ -549,15 +545,16 @@ export default function Home() {
                     sliderDragRef.current = "lineLength";
                   }
                 }}
-                style={{ width: "100%" }}
               />
             </div>
 
-            {/* Slider2: Curvatura linee - controls curvatureScale in ENGINE_V2 */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <label htmlFor="curvature" style={{ fontSize: "1rem" }}>
-                Curvatura linee: {curvatureSlider}
-              </label>
+            <div className="slider-row">
+              <div className="slider-label-wrapper">
+                <label htmlFor="curvature" className="field-label">
+                  Curvatura linee
+                </label>
+                <span className="slider-value">{curvatureSlider}</span>
+              </div>
               <input
                 id="curvature"
                 type="range"
@@ -574,15 +571,16 @@ export default function Home() {
                     sliderDragRef.current = "curvature";
                   }
                 }}
-                style={{ width: "100%" }}
               />
             </div>
 
-            {/* Slider3: Numero Cluster - controls clusterCount in ENGINE_V2 (patch03) */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <label htmlFor="clusterCount" style={{ fontSize: "1rem" }}>
-                Numero Cluster: {Math.round(2 + (clusterCountSlider / 100) * 3)}
-              </label>
+            <div className="slider-row">
+              <div className="slider-label-wrapper">
+                <label htmlFor="clusterCount" className="field-label">
+                  Numero cluster
+                </label>
+                <span className="slider-value">{clusterCountSlider}</span>
+              </div>
               <input
                 id="clusterCount"
                 type="range"
@@ -599,15 +597,16 @@ export default function Home() {
                     sliderDragRef.current = "clusterCount";
                   }
                 }}
-                style={{ width: "100%" }}
               />
             </div>
 
-            {/* Slider4: Ampiezza Cluster - controls clusterSpread in ENGINE_V2 (patch03) */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <label htmlFor="clusterSpread" style={{ fontSize: "1rem" }}>
-                Ampiezza Cluster: {Math.round(10 + (clusterSpreadSlider / 100) * 50)}°
-              </label>
+            <div className="slider-row">
+              <div className="slider-label-wrapper">
+                <label htmlFor="clusterSpread" className="field-label">
+                  Ampiezza cluster
+                </label>
+                <span className="slider-value">{clusterSpreadSlider}</span>
+              </div>
               <input
                 id="clusterSpread"
                 type="range"
@@ -624,51 +623,37 @@ export default function Home() {
                     sliderDragRef.current = "clusterSpread";
                   }
                 }}
-                style={{ width: "100%" }}
               />
             </div>
-
-            {/* Force Orientation toggle */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.25rem",
-                paddingTop: "0.75rem",
-                borderTop: "1px solid #333",
-              }}
-            >
-              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem" }}>
-                <input
-                  type="checkbox"
-                  checked={forceOrientation}
-                  onChange={(e) => {
-                    setForceOrientation(e.target.checked);
-                    scheduleRealtimeGeneration("force-orientation");
-                  }}
-                />
-                Force Orientation
-              </label>
-              <span style={{ fontSize: "0.85rem", color: "#bbb" }}>
-                Ruota di 90° clockwise se il bounding box pre-mirroring è più alto che largo.
-              </span>
-            </div>
-
-
           </div>
 
-
-          {/* Real-Time Generation Toggle */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.35rem",
-              paddingTop: "0.75rem",
-              borderTop: "1px solid #333",
-            }}
-          >
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem" }}>
+          <div className="toggle-grid">
+            <label className="field-label inline">
+              <input
+                type="checkbox"
+                checked={forceOrientation}
+                onChange={(e) => setForceOrientation(e.target.checked)}
+                onClick={() => scheduleRealtimeGeneration("force-orientation")}
+              />
+              Force orientation
+            </label>
+            <label className="field-label inline">
+              <input
+                type="checkbox"
+                checked={animationEnabled}
+                onChange={(e) => setAnimationEnabled(e.target.checked)}
+              />
+              Animazione
+            </label>
+            <label className="field-label inline">
+              <input
+                type="checkbox"
+                checked={debugMode}
+                onChange={(e) => setDebugMode(e.target.checked)}
+              />
+              Debug mode
+            </label>
+            <label className="field-label inline">
               <input
                 type="checkbox"
                 checked={realtimePreviewEnabled}
@@ -677,77 +662,36 @@ export default function Home() {
               />
               Anteprima real-time
             </label>
-            <span style={{ fontSize: "0.85rem", color: "#bbb" }}>
-              Aggiorna il simbolo mentre trascini gli slider (loop con cap ~60Hz).{" "}
-              {!REAL_TIME_GENERATION_FLAG && "Abilita NEXT_PUBLIC_REAL_TIME_GENERATION per sbloccare la feature."}
-            </span>
-            {realtimeFeatureActive && hasGeneratedAtLeastOnce && (
-              <div
-                style={{
-                  fontSize: "0.85rem",
-                  color: "#8be9fd",
-                  backgroundColor: "#111",
-                  border: "1px solid #1f8aad",
-                  borderRadius: "4px",
-                  padding: "0.5rem",
-                }}
-              >
-                <div>{realtimeIndicatorText}</div>
-                {realtimeIndicatorMeta && (
-                  <div style={{ fontSize: "0.8rem", color: "#88c0d0" }}>
-                    {realtimeIndicatorMeta}
-                  </div>
-                )}
-              </div>
+            <label className="field-label inline">
+              <input
+                type="checkbox"
+                checked={layoutDebugMode}
+                onChange={(e) => setLayoutDebugMode(e.target.checked)}
+              />
+              Layout debug
+            </label>
+          </div>
+
+          <div className="action-row">
+            <button onClick={handleGenerate} disabled={isGenerating} className="primary-button">
+              {generationButtonLabel}
+            </button>
+            {connectionsAvailable ? (
+              <DownloadSvgButton
+                connections={connections}
+                canvasWidth={canvasWidth}
+                canvasHeight={canvasHeight}
+              />
+            ) : (
+              <button className="secondary-button" disabled>
+                Download SVG
+              </button>
             )}
           </div>
-
-          {/* Animation Control */}
-          <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <input
-                type="checkbox"
-                checked={animationEnabled}
-                onChange={(e) => setAnimationEnabled(e.target.checked)}
-              />
-              Animazione
-            </label>
-          </div>
-
-          {/* Debug Mode Control */}
-          <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <input
-                type="checkbox"
-                checked={debugMode}
-                onChange={(e) => setDebugMode(e.target.checked)}
-              />
-              Debug mode
-            </label>
-          </div>
-
-          {/* Pulsante Genera */}
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            style={{
-              padding: "1rem 2rem",
-              fontSize: "1.1rem",
-              fontFamily: "Times New Roman, serif",
-              backgroundColor: isGenerating ? "#333" : "#fff",
-              color: isGenerating ? "#666" : "#000",
-              border: "none",
-              borderRadius: "4px",
-              cursor: isGenerating ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            {generationButtonLabel}
-          </button>
         </div>
 
         <div className="preview-panel">
-          {connections.length > 0 && (
+          {connectionsAvailable ? (
             <SvgPreview
               connections={connections}
               animationEnabled={animationEnabled}
@@ -757,18 +701,12 @@ export default function Home() {
               debugInfo={debugMode ? debugInfo : undefined}
               debugMode={debugMode}
             />
+          ) : (
+            <div className="preview-placeholder">Genera per vedere l&apos;anteprima</div>
           )}
         </div>
       </div>
-      {connections.length > 0 && (
-        <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "center" }}>
-          <DownloadSvgButton
-            connections={connections}
-            canvasWidth={canvasWidth}
-            canvasHeight={canvasHeight}
-          />
-        </div>
-      )}
+      <LayoutDebugOverlay enabled={layoutDebugMode} />
     </div>
   );
 }
